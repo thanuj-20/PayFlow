@@ -1,0 +1,92 @@
+import { useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import {
+  LayoutDashboard,
+  Users,
+  CalendarCheck,
+  CreditCard,
+  FileText,
+  BarChart2,
+  User,
+  LogOut,
+} from 'lucide-react';
+import { authStore } from '../store/authStore';
+
+const Sidebar = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { role, clearAuth } = authStore();
+
+  const hrNavItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: Users, label: 'Employees', path: '/employees' },
+    { icon: CalendarCheck, label: 'Attendance', path: '/attendance' },
+    { icon: CreditCard, label: 'Payroll', path: '/payroll' },
+    { icon: FileText, label: 'Payslips', path: '/payslips' },
+    { icon: BarChart2, label: 'Reports', path: '/reports' },
+  ];
+
+  const employeeNavItems = [
+    { icon: User, label: 'My Profile', path: '/my-profile' },
+    { icon: CalendarCheck, label: 'My Attendance', path: '/my-attendance' },
+    { icon: CreditCard, label: 'My Payroll', path: '/my-payroll' },
+    { icon: FileText, label: 'My Payslips', path: '/my-payslips' },
+  ];
+
+  const navItems = role === 'hr' ? hrNavItems : employeeNavItems;
+
+  const handleLogout = () => {
+    clearAuth();
+    navigate('/login');
+  };
+
+  return (
+    <div className="fixed left-0 top-0 h-full w-60 bg-[var(--bg-surface)] border-r border-[var(--border)] flex flex-col">
+      <div className="p-6">
+        <div className="logo text-2xl font-bold">
+          <span className="text-[var(--text-primary)]">Pay</span>
+          <span className="text-[var(--accent-primary)]">Flow</span>
+        </div>
+        <div className="mt-4 px-3 py-1 bg-[var(--bg-elevated)] rounded-full text-xs text-[var(--text-secondary)] text-center">
+          {role === 'hr' ? 'HR Admin' : 'Employee'}
+        </div>
+      </div>
+
+      <nav className="flex-1 px-4">
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <motion.button
+              key={item.path}
+              onClick={() => navigate(item.path)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                isActive
+                  ? 'bg-[var(--glow-violet)] border-l-4 border-[var(--accent-primary)] text-[var(--accent-primary)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'
+              }`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <item.icon size={20} className={isActive ? 'text-[var(--accent-primary)]' : ''} />
+              {item.label}
+            </motion.button>
+          );
+        })}
+      </nav>
+
+      <div className="p-4">
+        <motion.button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <LogOut size={20} />
+          Logout
+        </motion.button>
+      </div>
+    </div>
+  );
+};
+
+export default Sidebar;
