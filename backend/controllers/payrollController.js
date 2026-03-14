@@ -1,122 +1,203 @@
-const { readJSON, writeJSON } = require('../utils/fileHelper');
+const dataAggregationAgent = require('../agents/dataAggregationAgent');
+const payrollCalculationAgent = require('../agents/payrollCalculationAgent');
+const complianceValidationAgent = require('../agents/complianceValidationAgent');
+const anomalyDetectionAgent = require('../agents/anomalyDetectionAgent');
+const explanationAgent = require('../agents/explanationAgent');
 
-const getPayroll = (req, res) => {
+const getPayroll = async (req, res) => {
   try {
-    let payroll = readJSON('payroll');
-    const { month, year, department } = req.query;
-
-    if (month) {
-      payroll = payroll.filter(p => p.month === month);
-    }
-    if (year) {
-      payroll = payroll.filter(p => p.year === parseInt(year));
-    }
-    if (department) {
-      payroll = payroll.filter(p => p.department === department);
-    }
-
+    const db = req.db;
+    const { month, year, department, status } = req.query;
+    const query = {};
+    if (month) query.month = month;
+    if (year) query.year = parseInt(year);
+    if (department) query.department = department;
+    if (status) query.status = status;
+    const payroll = await db.collection('payroll').find(query).toArray();
     res.json(payroll);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
-const getPayrollSummary = (req, res) => {
+const getPayrollSummary = async (req, res) => {
   try {
-    const payroll = readJSON('payroll');
-    
+    const db = req.db;
+    const payroll = await db.collection('payroll').find({}).toArray();
+    const now = new Date();
     const summary = {
-      totalGross: payroll.reduce((sum, p) => sum + p.basicSalary, 0),
-      totalBonus: payroll.reduce((sum, p) => sum + p.bonus, 0),
-      totalDeductions: payroll.reduce((sum, p) => sum + p.deductions, 0),
-      totalNet: payroll.reduce((sum, p) => sum + p.netSalary, 0),
-      month: 'March',
-      year: 2026,
-      employeeCount: payroll.length
+      totalGross: payroll.reduce((sum, p) => sum + (p.grossSalary || p.basicSalary || 0), 0),
+      totalBonus: payroll.reduce((sum, p) => sum + (p.overtimePay || 0), 0),
+      totalDeductions: payroll.reduce((sum, p) => sum + (p.totalDeductions || 0), 0),
+      totalNet: payroll.reduce((sum, p) => sum + (p.netSalary || 0), 0),
+      month: now.toLocaleString('default', { month: 'long' }),
+      year: now.getFullYear(),
+      employeeCount: payroll.length,
+      pendingApproval: payroll.filter(p => p.status === 'pending_approval').length,
+      approved: payroll.filter(p => p.status === 'approved').length,
+      held: payroll.filter(p => p.status === 'held').length,
     };
-
     res.json(summary);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
-const runPayroll = (req, res) => {
+// STEP 1: Initiate Payroll — runs all 5 agents, saves as pending_approval
+const initiatePayroll = async (req, res) => {
   try {
-    const employees = readJSON('employees');
-    const activeEmployees = employees.filter(e => e.status === 'active');
+    const db = req.db;
+    const now = new Date();
+    const month = now.toLocaleString('default', { month: 'long' });
+    const year = now.getFullYear();
 
-    const payrollRecords = activeEmployees.map((emp, index) => {
-      const bonus = Math.floor(emp.basicSalary * 0.10);
-      const deductions = Math.floor(emp.basicSalary * 0.12);
-      const netSalary = emp.basicSalary + bonus - deductions;
+    const employees = await db.collection('employees').find({ status: 'active' }).toArray();
+    const results = [];
 
-      return {
-        id: 'p' + (index + 1),
+    for (const emp of employees) {
+      // Agent 1: Aggregate data
+      const aggregated = await dataAggregationAgent.aggregate(db, emp.id, month, year);
+
+      // Agent 2: Calculate salary
+      const calculated = payrollCalculationAgent.calculate(emp, aggregated);
+
+      // Agent 3: Compliance validation
+      const compliance = complianceValidationAgent.validate(calculated, emp);
+
+      // Agent 4: Anomaly detection (compare with last month)
+      const prevMonthPayroll = await db.collection('payroll').findOne(
+        { employeeId: emp.id, status: { $in: ['approved', 'processed'] } },
+        { sort: { year: -1 } }
+      );
+      const anomalies = anomalyDetectionAgent.detect(calculated, prevMonthPayroll);
+
+      // Agent 5: Generate explanation
+      const explanation = explanationAgent.generate(calculated, emp, prevMonthPayroll);
+
+      const record = {
+        id: 'p' + Date.now() + Math.random().toString(36).substr(2, 5),
         employeeId: emp.id,
         employeeName: `${emp.firstName} ${emp.lastName}`,
         department: emp.department,
         designation: emp.designation,
-        month: 'March',
-        year: 2026,
-        basicSalary: emp.basicSalary,
-        bonus,
-        deductions,
-        netSalary,
-        status: 'processed',
-        processedAt: new Date().toISOString()
+        month, year,
+        basicSalary: calculated.basicSalary,
+        hra: calculated.hra,
+        overtimePay: calculated.overtimePay,
+        lopDeduction: calculated.lopDeduction,
+        lopDays: calculated.lopDays,
+        overtimeHours: calculated.overtimeHours,
+        pfDeduction: calculated.pfDeduction,
+        professionalTax: calculated.professionalTax,
+        grossSalary: calculated.grossSalary,
+        totalDeductions: calculated.totalDeductions,
+        netSalary: calculated.netSalary,
+        explanation,
+        compliance,
+        anomalies,
+        status: 'pending_approval',
+        initiatedAt: now.toISOString(),
+        initiatedBy: req.user.userId,
       };
-    });
 
-    const payslipRecords = activeEmployees.map((emp, index) => {
-      const bonus = Math.floor(emp.basicSalary * 0.10);
-      const deductions = Math.floor(emp.basicSalary * 0.12);
-      const netSalary = emp.basicSalary + bonus - deductions;
-
-      return {
-        id: 'ps' + (index + 1),
-        employeeId: emp.id,
-        employeeName: `${emp.firstName} ${emp.lastName}`,
-        designation: emp.designation,
-        department: emp.department,
-        month: 'March',
-        year: 2026,
-        basicSalary: emp.basicSalary,
-        bonus,
-        deductions,
-        netSalary,
-        generatedAt: new Date().toISOString(),
-        status: 'generated'
-      };
-    });
-
-    writeJSON('payroll', payrollRecords);
-    writeJSON('payslips', payslipRecords);
-
-    res.json({
-      message: 'Payroll processed successfully',
-      month: 'March',
-      year: 2026,
-      processed: activeEmployees.length
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-const getPayrollByEmployee = (req, res) => {
-  try {
-    const payroll = readJSON('payroll');
-    
-    if (req.user.role === 'employee' && req.user.employeeId !== req.params.employeeId) {
-      return res.status(403).json({ error: 'Access denied' });
+      results.push(record);
     }
 
-    const employeePayroll = payroll.filter(p => p.employeeId === req.params.employeeId);
-    res.json(employeePayroll);
+    // Clear existing pending for this month and insert new
+    await db.collection('payroll').deleteMany({ month, year, status: 'pending_approval' });
+    if (results.length > 0) await db.collection('payroll').insertMany(results);
+
+    const flagged = results.filter(r => !r.compliance.isCompliant || r.anomalies.hasAnomalies).length;
+
+    res.json({
+      message: 'Payroll initiated successfully',
+      month, year,
+      processed: results.length,
+      flagged,
+      requiresReview: flagged > 0,
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
-module.exports = { getPayroll, getPayrollSummary, runPayroll, getPayrollByEmployee };
+// STEP 2: Approve a single payroll record
+const approvePayrollRecord = async (req, res) => {
+  try {
+    const db = req.db;
+    const { id } = req.params;
+    await db.collection('payroll').updateOne(
+      { id },
+      { $set: { status: 'approved', approvedAt: new Date().toISOString(), approvedBy: req.user.userId } }
+    );
+
+    // Also create payslip
+    const record = await db.collection('payroll').findOne({ id });
+    if (record) {
+      await db.collection('payslips').deleteOne({ employeeId: record.employeeId, month: record.month, year: record.year });
+      await db.collection('payslips').insertOne({ ...record, id: 'ps' + Date.now(), status: 'generated', generatedAt: new Date().toISOString() });
+    }
+
+    res.json({ message: 'Payroll record approved' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// STEP 2 (bulk): Approve all pending records for a month
+const approveAllPayroll = async (req, res) => {
+  try {
+    const db = req.db;
+    const { month, year } = req.body;
+    const now = new Date().toISOString();
+
+    const records = await db.collection('payroll').find({ month, year: parseInt(year), status: 'pending_approval' }).toArray();
+
+    for (const record of records) {
+      await db.collection('payroll').updateOne(
+        { id: record.id },
+        { $set: { status: 'approved', approvedAt: now, approvedBy: req.user.userId } }
+      );
+      await db.collection('payslips').deleteOne({ employeeId: record.employeeId, month, year: parseInt(year) });
+      await db.collection('payslips').insertOne({ ...record, id: 'ps' + Date.now() + record.employeeId, status: 'generated', generatedAt: now });
+    }
+
+    res.json({ message: `${records.length} payroll records approved`, month, year });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Hold a payroll record
+const holdPayrollRecord = async (req, res) => {
+  try {
+    const db = req.db;
+    const { id } = req.params;
+    const { reason } = req.body;
+    await db.collection('payroll').updateOne(
+      { id },
+      { $set: { status: 'held', heldAt: new Date().toISOString(), heldBy: req.user.userId, holdReason: reason } }
+    );
+    res.json({ message: 'Payroll record held for review' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getPayrollByEmployee = async (req, res) => {
+  try {
+    const db = req.db;
+    if (req.user.role === 'employee' && req.user.employeeId !== req.params.employeeId) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    const payroll = await db.collection('payroll').find({ employeeId: req.params.employeeId }).toArray();
+    res.json(payroll);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Legacy runPayroll kept for compatibility
+const runPayroll = initiatePayroll;
+
+module.exports = { getPayroll, getPayrollSummary, initiatePayroll, runPayroll, approvePayrollRecord, approveAllPayroll, holdPayrollRecord, getPayrollByEmployee };

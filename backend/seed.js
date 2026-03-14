@@ -9,23 +9,26 @@ async function seedDatabase() {
     await client.connect();
     const db = client.db('payflow');
 
-    // Seed users
-    const users = readJSON('users');
-    if (users.length > 0) {
-      await db.collection('users').insertMany(users);
-      console.log('Users seeded successfully');
+    const collections = ['users', 'employees', 'attendance', 'payroll', 'payslips', 'leaves'];
+
+    for (const name of collections) {
+      await db.collection(name).deleteMany({});
+      try {
+        const data = readJSON(name);
+        if (data.length > 0) {
+          await db.collection(name).insertMany(data);
+          console.log(`${name} seeded (${data.length} records)`);
+        } else {
+          console.log(`${name} skipped (empty)`);
+        }
+      } catch {
+        console.log(`${name} skipped (no file)`);
+      }
     }
 
-    // Seed employees
-    const employees = readJSON('employees');
-    if (employees.length > 0) {
-      await db.collection('employees').insertMany(employees);
-      console.log('Employees seeded successfully');
-    }
-
-    console.log('Database seeded successfully!');
+    console.log('\nDatabase seeded successfully!');
   } catch (error) {
-    console.error('Error seeding database:', error);
+    console.error('Error seeding database:', error.message);
   } finally {
     await client.close();
   }

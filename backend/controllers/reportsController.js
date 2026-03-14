@@ -1,23 +1,24 @@
-const { readJSON } = require('../utils/fileHelper');
-
-const getReportsSummary = (req, res) => {
+const getReportsSummary = async (req, res) => {
   try {
-    const employees = readJSON('employees');
-    const payroll = readJSON('payroll');
-    const attendance = readJSON('attendance');
+    const db = req.db;
+    const [employees, payroll, attendance] = await Promise.all([
+      db.collection('employees').find({}).toArray(),
+      db.collection('payroll').find({}).toArray(),
+      db.collection('attendance').find({}).toArray(),
+    ]);
 
     const activeEmployees = employees.filter(e => e.status === 'active');
-    
-    // Workforce summary
+
     const workforce = {
       total: employees.length,
       active: activeEmployees.length,
       inactive: employees.filter(e => e.status === 'inactive').length,
       departments: [...new Set(employees.map(e => e.department))].length,
-      avgSalary: Math.floor(activeEmployees.reduce((sum, e) => sum + e.basicSalary, 0) / activeEmployees.length)
+      avgSalary: activeEmployees.length
+        ? Math.floor(activeEmployees.reduce((sum, e) => sum + e.basicSalary, 0) / activeEmployees.length)
+        : 0
     };
 
-    // Department breakdown
     const deptMap = {};
     activeEmployees.forEach(emp => {
       if (!deptMap[emp.department]) {
@@ -28,14 +29,9 @@ const getReportsSummary = (req, res) => {
     });
 
     const departmentBreakdown = Object.values(deptMap)
-      .map(d => ({
-        department: d.department,
-        count: d.count,
-        avgSalary: Math.floor(d.totalSalary / d.count)
-      }))
+      .map(d => ({ department: d.department, count: d.count, avgSalary: Math.floor(d.totalSalary / d.count) }))
       .sort((a, b) => b.count - a.count);
 
-    // Salary brackets
     const salaryBrackets = [
       { range: '0-40K', count: activeEmployees.filter(e => e.basicSalary < 40000).length },
       { range: '40K-60K', count: activeEmployees.filter(e => e.basicSalary >= 40000 && e.basicSalary < 60000).length },
@@ -44,26 +40,24 @@ const getReportsSummary = (req, res) => {
       { range: '1L+', count: activeEmployees.filter(e => e.basicSalary >= 100000).length }
     ];
 
-    // Payroll summary
+    const now = new Date();
     const payrollSummary = {
-      month: 'March',
-      year: 2026,
-      totalGross: payroll.reduce((sum, p) => sum + p.basicSalary, 0),
-      totalBonus: payroll.reduce((sum, p) => sum + p.bonus, 0),
-      totalDeductions: payroll.reduce((sum, p) => sum + p.deductions, 0),
-      totalNet: payroll.reduce((sum, p) => sum + p.netSalary, 0)
+      month: now.toLocaleString('default', { month: 'long' }),
+      year: now.getFullYear(),
+      totalGross: payroll.reduce((sum, p) => sum + (p.basicSalary || 0), 0),
+      totalBonus: payroll.reduce((sum, p) => sum + (p.bonus || 0), 0),
+      totalDeductions: payroll.reduce((sum, p) => sum + (p.deductions || 0), 0),
+      totalNet: payroll.reduce((sum, p) => sum + (p.netSalary || 0), 0)
     };
 
-    // Attendance summary
     const attendanceSummary = {
-      date: '2026-03-13',
+      date: now.toISOString().split('T')[0],
       present: attendance.filter(a => a.status === 'present').length,
       late: attendance.filter(a => a.status === 'late').length,
       absent: attendance.filter(a => a.status === 'absent').length,
       total: attendance.length
     };
 
-    // All employee records with payroll data
     const allEmployeeRecords = employees.map(emp => {
       const payrollData = payroll.find(p => p.employeeId === emp.id);
       return {
@@ -73,22 +67,15 @@ const getReportsSummary = (req, res) => {
         department: emp.department,
         designation: emp.designation,
         basicSalary: emp.basicSalary,
-        bonus: payrollData ? payrollData.bonus : 0,
-        deductions: payrollData ? payrollData.deductions : 0,
-        netSalary: payrollData ? payrollData.netSalary : 0,
+        bonus: payrollData?.bonus || 0,
+        deductions: payrollData?.deductions || 0,
+        netSalary: payrollData?.netSalary || 0,
         status: emp.status,
         joiningDate: emp.joiningDate
       };
     });
 
-    res.json({
-      workforce,
-      departmentBreakdown,
-      salaryBrackets,
-      payrollSummary,
-      attendanceSummary,
-      allEmployeeRecords
-    });
+    res.json({ workforce, departmentBreakdown, salaryBrackets, payrollSummary, attendanceSummary, allEmployeeRecords });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

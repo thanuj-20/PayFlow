@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root, .dark {
   --bg-base: #0A0A0F;
   --bg-surface: #111118;
   --bg-elevated: #1A1A24;
@@ -18,8 +18,24 @@
   --glow-teal: rgba(0, 212, 170, 0.12);
 }
 
+.light {
+  --bg-base: #F4F4F8;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #EAEAF2;
+  --accent-primary: #6C63FF;
+  --accent-secondary: #00B894;
+  --accent-danger: #FF4365;
+  --accent-gold: #F39C12;
+  --text-primary: #1A1A2E;
+  --text-secondary: #555577;
+  --text-tertiary: #AAAACC;
+  --border: #DDDDE8;
+  --glow-violet: rgba(108, 99, 255, 0.10);
+  --glow-teal: rgba(0, 212, 170, 0.08);
+}
+
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   background: var(--bg-base);
   color: var(--text-primary);
   margin: 0;
@@ -28,7 +44,7 @@ body {
 }
 
 h1, h2, h3, .logo {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 body::before {
@@ -75,3 +91,138 @@ body::after {
 .float-0 { animation: float 3s ease-in-out infinite; }
 .float-1 { animation: float 3s ease-in-out infinite 0.4s; }
 .float-2 { animation: float 3s ease-in-out infinite 0.8s; }
+
+/* Layout */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-base);
+}
+
+.main-content {
+  margin-left: 240px;
+  flex: 1;
+  padding: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* Page header */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.page-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0.25rem 0 0;
+}
+
+/* Card */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.card.accent-primary  { border-left: 3px solid var(--accent-primary); }
+.card.accent-secondary { border-left: 3px solid var(--accent-secondary); }
+.card.accent-warning  { border-left: 3px solid var(--accent-gold); }
+.card.accent-danger   { border-left: 3px solid var(--accent-danger); }
+
+/* Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: var(--accent-primary);
+  color: #fff;
+  border: none;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-primary:hover { opacity: 0.88; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-secondary:hover { background: var(--border); }
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.badge-success { background: rgba(0,212,170,0.15); color: var(--accent-secondary); }
+.badge-warning { background: rgba(255,181,71,0.15);  color: var(--accent-gold); }
+.badge-danger  { background: rgba(255,67,101,0.15);  color: var(--accent-danger); }
+
+/* Table */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.data-table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 0.875rem 1rem;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+}
+.data-table tbody tr:hover { background: var(--bg-elevated); }
+.data-table tbody tr:last-child td { border-bottom: none; }
+
+/* Text helpers */
+.text-text-secondary { color: var(--text-secondary); }
+.text-primary { color: var(--accent-primary); }
+.bg-primary { background-color: var(--accent-primary); }
+.bg-secondary { background-color: var(--accent-secondary); }
+.bg-bg-elevated { background-color: var(--bg-elevated); }
+.bg-border { background-color: var(--border); }
+.h-px { height: 1px; }
+.bg-border.h-px { background-color: var(--border); }
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

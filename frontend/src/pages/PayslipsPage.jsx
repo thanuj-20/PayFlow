@@ -1,28 +1,19 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Download, AlertCircle } from 'lucide-react';
+import { FileText, Download, AlertCircle, Play } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
-import { getAllPayslips } from '../services/api';
+import { getAllPayslips, runPayroll } from '../services/api';
 
 const ShimmerCard = () => (
-  <motion.div
-    className="card"
-    style={{
-      background: 'linear-gradient(90deg, var(--bg-surface), var(--bg-elevated), var(--bg-surface))',
-      backgroundSize: '200% 100%',
-      animation: 'shimmer 1.5s infinite',
-      height: '280px'
-    }}
-  />
+  <motion.div className="card" style={{ background: 'linear-gradient(90deg, var(--bg-surface), var(--bg-elevated), var(--bg-surface))', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite', height: '280px' }} />
 );
 
 const ErrorState = ({ message, onRetry }) => (
   <div className="flex flex-col items-center justify-center h-96 gap-4">
     <AlertCircle className="w-16 h-16 text-red-500" />
     <p className="text-lg text-text-secondary">{message}</p>
-    <button onClick={onRetry} className="btn-primary">
-      Retry
-    </button>
+    <button onClick={onRetry} className="btn-primary">Retry</button>
   </div>
 );
 
@@ -30,6 +21,7 @@ const PayslipsPage = () => {
   const [payslips, setPayslips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [processing, setProcessing] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -44,17 +36,22 @@ const PayslipsPage = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(amount);
+  const handleRunPayroll = async () => {
+    try {
+      setProcessing(true);
+      await runPayroll();
+      toast.success('Payroll processed — payslips generated');
+      await fetchData();
+    } catch {
+      toast.error('Failed to process payroll');
+    } finally {
+      setProcessing(false);
+    }
   };
+
+  const formatCurrency = (amount) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
 
   return (
     <div className="app-layout">
@@ -69,10 +66,20 @@ const PayslipsPage = () => {
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map(i => <ShimmerCard key={i} />)}
+            {[1,2,3,4,5,6].map(i => <ShimmerCard key={i} />)}
           </div>
         ) : error ? (
           <ErrorState message={error} onRetry={fetchData} />
+        ) : payslips.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-96 gap-4">
+            <FileText className="w-16 h-16 text-[var(--text-tertiary)]" />
+            <p className="text-lg text-[var(--text-secondary)]">No payslips generated yet</p>
+            <p className="text-sm text-[var(--text-tertiary)]">Run payroll to generate payslips for all active employees</p>
+            <button onClick={handleRunPayroll} disabled={processing} className="btn-primary flex items-center gap-2">
+              {processing ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Play className="w-4 h-4" />}
+              {processing ? 'Processing...' : 'Run Payroll Now'}
+            </button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {payslips.map((payslip, index) => (
@@ -85,8 +92,8 @@ const PayslipsPage = () => {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-primary" />
+                    <div className="w-12 h-12 rounded-lg bg-[var(--glow-violet)] flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-[var(--accent-primary)]" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">{payslip.employeeName}</h3>
@@ -105,7 +112,7 @@ const PayslipsPage = () => {
                     <span className="text-text-secondary">Period:</span>
                     <span className="font-mono">{payslip.month} {payslip.year}</span>
                   </div>
-                  <div className="h-px bg-border my-3" />
+                  <div className="h-px" style={{ background: 'var(--border)' }} />
                   <div className="flex justify-between text-sm">
                     <span className="text-text-secondary">Basic Salary:</span>
                     <span className="font-mono">{formatCurrency(payslip.basicSalary)}</span>
@@ -118,10 +125,10 @@ const PayslipsPage = () => {
                     <span className="text-text-secondary">Deductions:</span>
                     <span className="font-mono text-red-500">-{formatCurrency(payslip.deductions)}</span>
                   </div>
-                  <div className="h-px bg-border my-3" />
+                  <div className="h-px" style={{ background: 'var(--border)' }} />
                   <div className="flex justify-between">
                     <span className="font-semibold">Net Salary:</span>
-                    <span className="font-mono font-bold text-lg text-primary">{formatCurrency(payslip.netSalary)}</span>
+                    <span className="font-mono font-bold text-lg" style={{ color: 'var(--accent-primary)' }}>{formatCurrency(payslip.netSalary)}</span>
                   </div>
                 </div>
 
@@ -134,13 +141,7 @@ const PayslipsPage = () => {
           </div>
         )}
       </main>
-
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      `}</style>
+      <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
     </div>
   );
 };

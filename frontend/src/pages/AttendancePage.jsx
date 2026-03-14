@@ -1,65 +1,65 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Users, Clock, AlertCircle, UserCheck } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Users, Clock, AlertCircle, UserCheck, Plus, X } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-import { getAttendance, getAttendanceSummary } from '../services/api';
-
-const ShimmerCard = () => (
-  <motion.div
-    className="card"
-    style={{
-      background: 'linear-gradient(90deg, var(--bg-surface), var(--bg-elevated), var(--bg-surface))',
-      backgroundSize: '200% 100%',
-      animation: 'shimmer 1.5s infinite',
-      height: '180px'
-    }}
-  />
-);
-
-const ErrorState = ({ message, onRetry }) => (
-  <div className="flex flex-col items-center justify-center h-96 gap-4">
-    <AlertCircle className="w-16 h-16 text-red-500" />
-    <p className="text-lg text-text-secondary">{message}</p>
-    <button onClick={onRetry} className="btn-primary">
-      Retry
-    </button>
-  </div>
-);
+import { getAttendance, getAttendanceSummary, addAttendance, getEmployees } from '../services/api';
+import toast from 'react-hot-toast';
 
 const AttendancePage = () => {
   const [records, setRecords] = useState([]);
   const [summary, setSummary] = useState(null);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [filterDate, setFilterDate] = useState('');
+  const [form, setForm] = useState({
+    employeeId: '', date: new Date().toISOString().split('T')[0],
+    checkIn: '09:00', checkOut: '18:00', status: 'present', overtimeHours: 0
+  });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
-      const [recordsRes, summaryRes] = await Promise.all([
-        getAttendance(),
-        getAttendanceSummary()
+      const params = {};
+      if (filterDate) params.date = filterDate;
+      const [recordsRes, summaryRes, empRes] = await Promise.all([
+        getAttendance(params),
+        getAttendanceSummary(),
+        getEmployees({ status: 'active' })
       ]);
       setRecords(recordsRes.data);
       setSummary(summaryRes.data);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Could not load attendance data');
+      setEmployees(empRes.data);
+    } catch {
+      toast.error('Could not load attendance data');
     } finally {
       setLoading(false);
     }
+  }, [filterDate]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await addAttendance(form);
+      toast.success('Attendance record added');
+      setShowModal(false);
+      setForm({ employeeId: '', date: new Date().toISOString().split('T')[0], checkIn: '09:00', checkOut: '18:00', status: 'present', overtimeHours: 0 });
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to add record');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'present': return 'accent-primary';
-      case 'late': return 'accent-warning';
-      case 'absent': return 'accent-danger';
-      default: return 'accent-secondary';
-    }
+  const statusBadge = (status) => {
+    if (status === 'present') return 'badge-success';
+    if (status === 'late') return 'badge-warning';
+    return 'badge-danger';
   };
 
   return (
@@ -69,114 +69,198 @@ const AttendancePage = () => {
         <div className="page-header">
           <div>
             <h1 className="page-title">Attendance Tracking</h1>
-            <p className="page-subtitle">Monitor daily employee attendance</p>
+            <p className="page-subtitle">Monitor and manage employee attendance</p>
           </div>
+          <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
+            <Plus size={16} /> Add Record
+          </button>
         </div>
 
+        {/* Summary Cards */}
+        <div className="grid grid-cols-4 gap-6 mb-8">
+          {[
+            { label: 'Present Today', value: summary?.present ?? 0, icon: UserCheck, cls: 'accent-secondary' },
+            { label: 'Late Today', value: summary?.late ?? 0, icon: Clock, cls: 'accent-warning' },
+            { label: 'Absent Today', value: summary?.absent ?? 0, icon: AlertCircle, cls: 'accent-danger' },
+            { label: 'Total Records', value: records.length, icon: Users, cls: 'accent-primary' },
+          ].map(({ label, value, icon: Icon, cls }, i) => (
+            <motion.div key={label} className={`card ${cls}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-text-secondary mb-1">{label}</p>
+                  <p className="text-3xl font-mono font-bold">{value}</p>
+                </div>
+                <Icon className="w-12 h-12 opacity-20" />
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Filter */}
+        <div className="card mb-6 flex items-center gap-4">
+          <label className="text-sm text-[var(--text-secondary)]">Filter by date:</label>
+          <input
+            type="date"
+            value={filterDate}
+            onChange={e => setFilterDate(e.target.value)}
+            className="px-3 py-2 rounded-lg text-sm"
+            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          />
+          {filterDate && (
+            <button onClick={() => setFilterDate('')} className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+              Clear
+            </button>
+          )}
+        </div>
+
+        {/* Records Table */}
         {loading ? (
-          <>
-            <div className="grid grid-cols-3 gap-6 mb-8">
-              {[1, 2, 3].map(i => <ShimmerCard key={i} />)}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => <ShimmerCard key={i} />)}
-            </div>
-          </>
-        ) : error ? (
-          <ErrorState message={error} onRetry={fetchData} />
+          <div className="text-center py-12 text-[var(--text-secondary)]">Loading...</div>
+        ) : records.length === 0 ? (
+          <div className="card text-center py-12 text-[var(--text-secondary)]">
+            No attendance records found{filterDate ? ` for ${filterDate}` : ''}
+          </div>
         ) : (
-          <>
-            <div className="grid grid-cols-3 gap-6 mb-8">
-              <motion.div
-                className="card accent-primary"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-text-secondary mb-1">Present</p>
-                    <p className="text-3xl font-mono font-bold">{summary?.present || 0}</p>
-                  </div>
-                  <UserCheck className="w-12 h-12 opacity-20" />
-                </div>
-              </motion.div>
-
-              <motion.div
-                className="card accent-warning"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-text-secondary mb-1">Late</p>
-                    <p className="text-3xl font-mono font-bold">{summary?.late || 0}</p>
-                  </div>
-                  <Clock className="w-12 h-12 opacity-20" />
-                </div>
-              </motion.div>
-
-              <motion.div
-                className="card accent-danger"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-text-secondary mb-1">Absent</p>
-                    <p className="text-3xl font-mono font-bold">{summary?.absent || 0}</p>
-                  </div>
-                  <AlertCircle className="w-12 h-12 opacity-20" />
-                </div>
-              </motion.div>
+          <motion.div className="card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Date</th>
+                    <th>Check In</th>
+                    <th>Check Out</th>
+                    <th>Overtime</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {records.map(r => (
+                    <tr key={r.id}>
+                      <td className="font-medium">{r.employeeName}</td>
+                      <td className="text-[var(--text-secondary)]">{r.department}</td>
+                      <td className="font-mono">{r.date}</td>
+                      <td className="font-mono">{r.checkIn || '—'}</td>
+                      <td className="font-mono">{r.checkOut || '—'}</td>
+                      <td className="font-mono">{r.overtimeHours > 0 ? `${r.overtimeHours}h` : '—'}</td>
+                      <td><span className={`badge ${statusBadge(r.status)}`}>{r.status}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {records.map((record, index) => (
-                <motion.div
-                  key={record.id}
-                  className={`card ${getStatusColor(record.status)}`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="font-semibold text-lg">{record.employeeName}</h3>
-                      <p className="text-sm text-text-secondary">{record.department}</p>
-                    </div>
-                    <span className={`badge badge-${record.status === 'present' ? 'success' : record.status === 'late' ? 'warning' : 'danger'}`}>
-                      {record.status}
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-secondary">Check In:</span>
-                      <span className="font-mono">{record.checkIn || '—'}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-secondary">Check Out:</span>
-                      <span className="font-mono">{record.checkOut || '—'}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-secondary">Date:</span>
-                      <span className="font-mono">{record.date}</span>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </>
+          </motion.div>
         )}
-      </main>
 
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      `}</style>
+        {/* Add Attendance Modal */}
+        <AnimatePresence>
+          {showModal && (
+            <motion.div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              style={{ background: 'rgba(0,0,0,0.6)' }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowModal(false)}
+            >
+              <motion.div
+                className="card w-full max-w-md"
+                initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold">Add Attendance Record</h2>
+                  <button onClick={() => setShowModal(false)}><X size={20} /></button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Employee</label>
+                    <select
+                      required
+                      value={form.employeeId}
+                      onChange={e => setForm(f => ({ ...f, employeeId: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                    >
+                      <option value="">Select employee...</option>
+                      {employees.map(emp => (
+                        <option key={emp.id} value={emp.id}>{emp.firstName} {emp.lastName} — {emp.department}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Date</label>
+                    <input
+                      type="date" required value={form.date}
+                      onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Status</label>
+                    <select
+                      value={form.status}
+                      onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                    >
+                      <option value="present">Present</option>
+                      <option value="late">Late</option>
+                      <option value="absent">Absent</option>
+                    </select>
+                  </div>
+
+                  {form.status !== 'absent' && (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm text-[var(--text-secondary)] mb-1">Check In</label>
+                          <input
+                            type="time" value={form.checkIn}
+                            onChange={e => setForm(f => ({ ...f, checkIn: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-lg text-sm"
+                            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm text-[var(--text-secondary)] mb-1">Check Out</label>
+                          <input
+                            type="time" value={form.checkOut}
+                            onChange={e => setForm(f => ({ ...f, checkOut: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-lg text-sm"
+                            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-[var(--text-secondary)] mb-1">Overtime Hours</label>
+                        <input
+                          type="number" min="0" max="12" step="0.5" value={form.overtimeHours}
+                          onChange={e => setForm(f => ({ ...f, overtimeHours: e.target.value }))}
+                          className="w-full px-3 py-2 rounded-lg text-sm"
+                          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 rounded-lg text-sm" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+                      Cancel
+                    </button>
+                    <button type="submit" disabled={submitting} className="flex-1 btn-primary">
+                      {submitting ? 'Saving...' : 'Save Record'}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
     </div>
   );
 };

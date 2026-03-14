@@ -1,42 +1,54 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Calendar, MapPin, Building } from 'lucide-react';
+import { Mail, Calendar, Building, TrendingUp, TrendingDown, FileText, Clock, UserCheck, AlertCircle } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-import { getEmployee } from '../services/api';
+import { getEmployee, getMyPayslips, getMyPayroll, getAttendance } from '../services/api';
 import { authStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 
 const EmployeeProfilePage = () => {
   const [employee, setEmployee] = useState(null);
+  const [payslips, setPayslips] = useState([]);
+  const [payroll, setPayroll] = useState([]);
+  const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
   const { employeeId } = authStore();
 
   useEffect(() => {
-    const fetchEmployee = async () => {
+    if (!employeeId) return;
+    const fetchAll = async () => {
       try {
-        const response = await getEmployee(employeeId);
-        setEmployee(response.data);
-      } catch (error) {
-        console.error('Failed to fetch employee:', error);
+        const empRes = await getEmployee(employeeId);
+        setEmployee(empRes.data);
+      } catch {
         toast.error('Failed to load profile');
-      } finally {
         setLoading(false);
+        return;
       }
+
+      const [payslipRes, payrollRes, attendanceRes] = await Promise.allSettled([
+        getMyPayslips(employeeId),
+        getMyPayroll(employeeId),
+        getAttendance({ employeeId }),
+      ]);
+
+      if (payslipRes.status === 'fulfilled') setPayslips(payslipRes.value.data);
+      if (payrollRes.status === 'fulfilled') setPayroll(payrollRes.value.data);
+      if (attendanceRes.status === 'fulfilled') setAttendance(attendanceRes.value.data);
+
+      setLoading(false);
     };
-    if (employeeId) {
-      fetchEmployee();
-    }
+    fetchAll();
   }, [employeeId]);
+
+  const formatCurrency = (amount) =>
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[var(--bg-base)]">
         <Sidebar />
-        <div className="ml-60 page-content p-8">
-          <div className="text-center py-12">
-            <div className="text-[var(--text-secondary)]">Loading profile...</div>
-          </div>
-        </div>
+        <div className="ml-60 page-content p-8 text-center py-12 text-[var(--text-secondary)]">Loading profile...</div>
       </div>
     );
   }
@@ -45,16 +57,16 @@ const EmployeeProfilePage = () => {
     return (
       <div className="min-h-screen bg-[var(--bg-base)]">
         <Sidebar />
-        <div className="ml-60 page-content p-8">
-          <div className="text-center py-12">
-            <div className="text-[var(--text-secondary)]">Profile not found</div>
-          </div>
-        </div>
+        <div className="ml-60 page-content p-8 text-center py-12 text-[var(--text-secondary)]">Profile not found</div>
       </div>
     );
   }
 
   const initials = `${employee.firstName[0]}${employee.lastName[0]}`.toUpperCase();
+  const presentDays = attendance.filter(a => a.status === 'present').length;
+  const lateDays = attendance.filter(a => a.status === 'late').length;
+  const absentDays = attendance.filter(a => a.status === 'absent').length;
+  const latestPayroll = payroll[payroll.length - 1];
 
   return (
     <div className="min-h-screen bg-[var(--bg-base)]">
@@ -64,33 +76,34 @@ const EmployeeProfilePage = () => {
           className="p-8"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -24 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-5xl mx-auto space-y-6">
+
             {/* Hero Card */}
             <motion.div
-              className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl p-8 mb-8"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl p-8"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             >
               <div className="flex items-center gap-6">
-                <div className="w-20 h-20 bg-gradient-to-br from-[var(--accent-primary)] to-[#9B5DFF] rounded-full flex items-center justify-center text-2xl font-bold text-white">
+                <div className="w-24 h-24 bg-gradient-to-br from-[var(--accent-primary)] to-[#9B5DFF] rounded-full flex items-center justify-center text-3xl font-bold text-white flex-shrink-0">
                   {initials}
                 </div>
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-[var(--text-primary)] font-['Syne'] mb-2">
+                  <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">
                     {employee.firstName} {employee.lastName}
                   </h1>
-                  <div className="flex items-center gap-4 text-[var(--text-secondary)]">
-                    <span className="px-3 py-1 bg-[var(--bg-elevated)] rounded-full text-sm">
-                      {employee.designation}
-                    </span>
-                    <span className="px-3 py-1 bg-[var(--bg-elevated)] rounded-full text-sm">
-                      {employee.department}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="px-3 py-1 bg-[var(--bg-elevated)] rounded-full text-sm text-[var(--text-secondary)]">{employee.designation}</span>
+                    <span className="px-3 py-1 bg-[var(--bg-elevated)] rounded-full text-sm text-[var(--text-secondary)]">{employee.department}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${employee.status === 'active' ? 'bg-[var(--glow-teal)] text-[var(--accent-secondary)]' : 'bg-red-500/20 text-red-400'}`}>
+                      {employee.status}
                     </span>
                   </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-[var(--text-secondary)] mb-1">Employee ID</p>
+                  <p className="font-mono text-[var(--accent-primary)] font-bold">{employee.id}</p>
                 </div>
               </div>
             </motion.div>
@@ -99,32 +112,31 @@ const EmployeeProfilePage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <motion.div
                 className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-6"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
               >
-                <h3 className="text-lg font-bold text-[var(--text-primary)] font-['Syne'] mb-4">
-                  Contact Information
-                </h3>
+                <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4">Contact Information</h3>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <Mail size={20} className="text-[var(--accent-primary)]" />
                     <div>
-                      <div className="text-sm text-[var(--text-secondary)]">Email</div>
+                      <div className="text-xs text-[var(--text-secondary)]">Email</div>
                       <div className="text-[var(--text-primary)]">{employee.email}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Calendar size={20} className="text-[var(--accent-secondary)]" />
                     <div>
-                      <div className="text-sm text-[var(--text-secondary)]">Joining Date</div>
+                      <div className="text-xs text-[var(--text-secondary)]">Joining Date</div>
                       <div className="text-[var(--text-primary)]">
-                        {new Date(employee.joiningDate).toLocaleDateString('en-IN', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
+                        {new Date(employee.joiningDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
                       </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Building size={20} className="text-[var(--accent-primary)]" />
+                    <div>
+                      <div className="text-xs text-[var(--text-secondary)]">Department</div>
+                      <div className="text-[var(--text-primary)]">{employee.department}</div>
                     </div>
                   </div>
                 </div>
@@ -132,51 +144,102 @@ const EmployeeProfilePage = () => {
 
               <motion.div
                 className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-6"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
               >
-                <h3 className="text-lg font-bold text-[var(--text-primary)] font-['Syne'] mb-4">
-                  Employment Details
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Building size={20} className="text-[var(--accent-primary)]" />
-                    <div>
-                      <div className="text-sm text-[var(--text-secondary)]">Department</div>
-                      <div className="text-[var(--text-primary)]">{employee.department}</div>
+                <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4">Salary Breakdown</h3>
+                {latestPayroll ? (
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-[var(--text-secondary)]">Basic Salary</span>
+                      <span className="font-mono font-bold text-[var(--text-primary)]">{formatCurrency(employee.basicSalary)}</span>
                     </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-[var(--text-secondary)] flex items-center gap-1"><TrendingUp size={14} className="text-green-500" /> Bonus</span>
+                      <span className="font-mono text-green-500">+{formatCurrency(latestPayroll.bonus)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-[var(--text-secondary)] flex items-center gap-1"><TrendingDown size={14} className="text-red-400" /> Deductions</span>
+                      <span className="font-mono text-red-400">-{formatCurrency(latestPayroll.deductions)}</span>
+                    </div>
+                    <div className="h-px" style={{ background: 'var(--border)' }} />
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-[var(--text-primary)]">Net Salary</span>
+                      <span className="font-mono font-bold text-xl" style={{ color: 'var(--accent-secondary)' }}>{formatCurrency(latestPayroll.netSalary)}</span>
+                    </div>
+                    <p className="text-xs text-[var(--text-tertiary)]">Last processed: {latestPayroll.month} {latestPayroll.year}</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 bg-[var(--accent-secondary)] rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">₹</span>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-[var(--text-secondary)]">Basic Salary</span>
+                      <span className="font-mono font-bold text-xl" style={{ color: 'var(--accent-secondary)' }}>{formatCurrency(employee.basicSalary)}</span>
                     </div>
-                    <div>
-                      <div className="text-sm text-[var(--text-secondary)]">Basic Salary</div>
-                      <div
-                        className="text-[var(--text-primary)] font-bold text-xl"
-                        style={{ textShadow: '0 0 20px var(--glow-teal)' }}
-                      >
-                        ₹{employee.basicSalary.toLocaleString('en-IN')}
-                      </div>
-                    </div>
+                    <p className="text-xs text-[var(--text-tertiary)]">Payroll not yet processed</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${
-                      employee.status === 'active' ? 'bg-[var(--accent-secondary)]' : 'bg-red-400'
-                    }`} />
-                    <div>
-                      <div className="text-sm text-[var(--text-secondary)]">Status</div>
-                      <div className={`text-sm font-medium ${
-                        employee.status === 'active' ? 'text-[var(--accent-secondary)]' : 'text-red-400'
-                      }`}>
-                        {employee.status}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                )}
               </motion.div>
             </div>
+
+            {/* Attendance Summary */}
+            <motion.div
+              className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-6"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+            >
+              <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4">Attendance Summary</h3>
+              {attendance.length === 0 ? (
+                <p className="text-[var(--text-secondary)] text-sm">No attendance records found</p>
+              ) : (
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-[var(--bg-elevated)] rounded-xl p-4 text-center">
+                    <UserCheck size={24} className="mx-auto mb-2 text-[var(--accent-secondary)]" />
+                    <p className="text-2xl font-bold text-[var(--text-primary)]">{presentDays}</p>
+                    <p className="text-sm text-[var(--text-secondary)]">Present</p>
+                  </div>
+                  <div className="bg-[var(--bg-elevated)] rounded-xl p-4 text-center">
+                    <Clock size={24} className="mx-auto mb-2 text-[var(--accent-gold)]" />
+                    <p className="text-2xl font-bold text-[var(--text-primary)]">{lateDays}</p>
+                    <p className="text-sm text-[var(--text-secondary)]">Late</p>
+                  </div>
+                  <div className="bg-[var(--bg-elevated)] rounded-xl p-4 text-center">
+                    <AlertCircle size={24} className="mx-auto mb-2 text-[var(--accent-danger)]" />
+                    <p className="text-2xl font-bold text-[var(--text-primary)]">{absentDays}</p>
+                    <p className="text-sm text-[var(--text-secondary)]">Absent</p>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Payslip History */}
+            <motion.div
+              className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-6"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+            >
+              <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4">Payslip History</h3>
+              {payslips.length === 0 ? (
+                <p className="text-[var(--text-secondary)] text-sm">No payslips generated yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {payslips.map((ps) => (
+                    <div key={ps.id} className="flex items-center justify-between p-4 bg-[var(--bg-elevated)] rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[var(--glow-violet)] flex items-center justify-center">
+                          <FileText size={18} className="text-[var(--accent-primary)]" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-[var(--text-primary)]">{ps.month} {ps.year}</p>
+                          <p className="text-xs text-[var(--text-secondary)]">{ps.department}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-mono font-bold" style={{ color: 'var(--accent-secondary)' }}>{formatCurrency(ps.netSalary)}</p>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--glow-teal)] text-[var(--accent-secondary)]">{ps.status}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+
           </div>
         </motion.div>
       </div>

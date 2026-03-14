@@ -6,14 +6,20 @@ const login = async (req, res) => {
     const db = req.db;
     const { email, password } = req.body;
     const user = await db.collection('users').findOne({ email });
+    console.log(`Login attempt for email: ${email}`);
+    console.log(`User found: ${user ? 'Yes' : 'No'}`);
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      console.log('User not found in database');
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     const isValid = bcrypt.compareSync(password, user.password);
+    console.log(`Password is valid: ${isValid}`);
+    
     if (!isValid) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      console.log('Invalid password provided');
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     const token = jwt.sign(
@@ -24,7 +30,7 @@ const login = async (req, res) => {
 
     res.json({ token, role: user.role, employeeId: user.employeeId });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 

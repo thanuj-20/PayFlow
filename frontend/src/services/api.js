@@ -5,10 +5,17 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
 });
 
-// Request interceptor to attach token
 api.interceptors.request.use((config) => {
-  const { token } = authStore.getState();
+  const { token, clearAuth } = authStore.getState();
   if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.exp * 1000 < Date.now()) {
+        clearAuth();
+        window.location.href = '/login';
+        return Promise.reject(new Error('Token expired'));
+      }
+    } catch {}
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -46,8 +53,10 @@ export const getAttendance = (filters = {}) => {
   const params = new URLSearchParams(filters);
   return api.get(`/api/attendance?${params}`);
 };
-
 export const getAttendanceSummary = () => api.get('/api/attendance/summary');
+export const checkIn = () => api.post('/api/attendance/checkin');
+export const checkOut = () => api.post('/api/attendance/checkout');
+export const addAttendance = (data) => api.post('/api/attendance', data);
 
 // Payroll
 export const getPayroll = (filters = {}) => {
@@ -58,6 +67,15 @@ export const getPayroll = (filters = {}) => {
 export const getPayrollSummary = () => api.get('/api/payroll/summary');
 
 export const runPayroll = () => api.post('/api/payroll/run');
+export const initiatePayroll = () => api.post('/api/payroll/initiate');
+export const approveAllPayroll = (month, year) => api.post('/api/payroll/approve-all', { month, year });
+export const approvePayrollRecord = (id) => api.put(`/api/payroll/${id}/approve`);
+export const holdPayrollRecord = (id, reason) => api.put(`/api/payroll/${id}/hold`, { reason });
+
+// Leaves
+export const getLeaves = (filters = {}) => { const params = new URLSearchParams(filters); return api.get(`/api/leaves?${params}`); };
+export const applyLeave = (data) => api.post('/api/leaves', data);
+export const updateLeaveStatus = (id, status, hrComment) => api.put(`/api/leaves/${id}`, { status, hrComment });
 
 export const getMyPayroll = (employeeId) => api.get(`/api/payroll/${employeeId}`);
 

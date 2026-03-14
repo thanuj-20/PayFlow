@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Edit, Trash2 } from 'lucide-react';
 
-const EmployeeTable = ({ employees, onEdit, onDeactivate }) => {
+const EmployeeTable = ({ employees, onEdit, onDeactivate, deactivatingId }) => {
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -80,7 +80,9 @@ const EmployeeTable = ({ employees, onEdit, onDeactivate }) => {
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                   >
-                    <Trash2 size={16} />
+                    {deactivatingId === employee.id
+                      ? <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                      : <Trash2 size={16} />}
                   </motion.button>
                 </div>
               </td>
