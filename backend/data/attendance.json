@@ -1,0 +1,102 @@
+[
+  {
+    "id": "a1",
+    "employeeId": "e1",
+    "employeeName": "John Doe",
+    "department": "Engineering",
+    "date": "2026-03-13",
+    "checkIn": "09:02",
+    "checkOut": "18:15",
+    "status": "present"
+  },
+  {
+    "id": "a2",
+    "employeeId": "e2",
+    "employeeName": "Sarah Johnson",
+    "department": "HR",
+    "date": "2026-03-13",
+    "checkIn": "08:50",
+    "checkOut": "17:45",
+    "status": "present"
+  },
+  {
+    "id": "a3",
+    "employeeId": "e3",
+    "employeeName": "Michael Chen",
+    "department": "Engineering",
+    "date": "2026-03-13",
+    "checkIn": "10:30",
+    "checkOut": null,
+    "status": "late"
+  },
+  {
+    "id": "a4",
+    "employeeId": "e4",
+    "employeeName": "Emily Rodriguez",
+    "department": "Finance",
+    "date": "2026-03-13",
+    "checkIn": "09:05",
+    "checkOut": "18:00",
+    "status": "present"
+  },
+  {
+    "id": "a5",
+    "employeeId": "e5",
+    "employeeName": "David Williams",
+    "department": "Marketing",
+    "date": "2026-03-13",
+    "checkIn": null,
+    "checkOut": null,
+    "status": "absent"
+  },
+  {
+    "id": "a6",
+    "employeeId": "e6",
+    "employeeName": "Lisa Anderson",
+    "department": "Operations",
+    "date": "2026-03-13",
+    "checkIn": "08:55",
+    "checkOut": "17:50",
+    "status": "present"
+  },
+  {
+    "id": "a7",
+    "employeeId": "e7",
+    "employeeName": "James Taylor",
+    "department": "Engineering",
+    "date": "2026-03-13",
+    "checkIn": "09:10",
+    "checkOut": "18:20",
+    "status": "present"
+  },
+  {
+    "id": "a8",
+    "employeeId": "e8",
+    "employeeName": "Amanda Martinez",
+    "department": "Finance",
+    "date": "2026-03-13",
+    "checkIn": "11:15",
+    "checkOut": null,
+    "status": "late"
+  },
+  {
+    "id": "a9",
+    "employeeId": "e9",
+    "employeeName": "Robert Brown",
+    "department": "Marketing",
+    "date": "2026-03-13",
+    "checkIn": "09:00",
+    "checkOut": "18:10",
+    "status": "present"
+  },
+  {
+    "id": "a10",
+    "employeeId": "e10",
+    "employeeName": "Jennifer Lee",
+    "department": "Operations",
+    "date": "2026-03-13",
+    "checkIn": "08:45",
+    "checkOut": "17:30",
+    "status": "present"
+  }
+]

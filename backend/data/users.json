@@ -1,0 +1,16 @@
+[
+  {
+    "id": "u1",
+    "email": "admin@payflow.com",
+    "password": "$2a$10$IwH90DWXlXCDbWF83G/SY.APmEYt31S4UYrDWAF92DFmvCmcBPvbG",
+    "role": "hr",
+    "employeeId": null
+  },
+  {
+    "id": "u2",
+    "email": "john@payflow.com",
+    "password": "$2a$10$P4SH4Egl5dXVghM4fZ3Hr.l.oULpzjcZw5jQCaecDIAJCKSjIehwi",
+    "role": "employee",
+    "employeeId": "e1"
+  }
+]

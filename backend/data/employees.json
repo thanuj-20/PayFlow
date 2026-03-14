@@ -1,0 +1,122 @@
+[
+  {
+    "id": "e1",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john@payflow.com",
+    "department": "Engineering",
+    "designation": "Software Engineer",
+    "basicSalary": 75000,
+    "joiningDate": "2022-03-15",
+    "status": "active",
+    "modificationLog": []
+  },
+  {
+    "id": "e2",
+    "firstName": "Sarah",
+    "lastName": "Johnson",
+    "email": "sarah.johnson@payflow.com",
+    "department": "HR",
+    "designation": "HR Manager",
+    "basicSalary": 85000,
+    "joiningDate": "2021-01-10",
+    "status": "active",
+    "modificationLog": []
+  },
+  {
+    "id": "e3",
+    "firstName": "Michael",
+    "lastName": "Chen",
+    "email": "michael.chen@payflow.com",
+    "department": "Engineering",
+    "designation": "Senior Software Engineer",
+    "basicSalary": 95000,
+    "joiningDate": "2020-06-20",
+    "status": "active",
+    "modificationLog": []
+  },
+  {
+    "id": "e4",
+    "firstName": "Emily",
+    "lastName": "Rodriguez",
+    "email": "emily.rodriguez@payflow.com",
+    "department": "Finance",
+    "designation": "Financial Analyst",
+    "basicSalary": 68000,
+    "joiningDate": "2022-08-01",
+    "status": "active",
+    "modificationLog": []
+  },
+  {
+    "id": "e5",
+    "firstName": "David",
+    "lastName": "Williams",
+    "email": "david.williams@payflow.com",
+    "department": "Marketing",
+    "designation": "Marketing Manager",
+    "basicSalary": 82000,
+    "joiningDate": "2021-11-15",
+    "status": "active",
+    "modificationLog": []
+  },
+  {
+    "id": "e6",
+    "firstName": "Lisa",
+    "lastName": "Anderson",
+    "email": "lisa.anderson@payflow.com",
+    "department": "Operations",
+    "designation": "Operations Coordinator",
+    "basicSalary": 55000,
+    "joiningDate": "2023-02-01",
+    "status": "active",
+    "modificationLog": []
+  },
+  {
+    "id": "e7",
+    "firstName": "James",
+    "lastName": "Taylor",
+    "email": "james.taylor@payflow.com",
+    "department": "Engineering",
+    "designation": "Lead Developer",
+    "basicSalary": 110000,
+    "joiningDate": "2019-04-12",
+    "status": "active",
+    "modificationLog": []
+  },
+  {
+    "id": "e8",
+    "firstName": "Amanda",
+    "lastName": "Martinez",
+    "email": "amanda.martinez@payflow.com",
+    "department": "Finance",
+    "designation": "Senior Accountant",
+    "basicSalary": 72000,
+    "joiningDate": "2021-09-05",
+    "status": "active",
+    "modificationLog": []
+  },
+  {
+    "id": "e9",
+    "firstName": "Robert",
+    "lastName": "Brown",
+    "email": "robert.brown@payflow.com",
+    "department": "Marketing",
+    "designation": "Content Strategist",
+    "basicSalary": 58000,
+    "joiningDate": "2022-12-10",
+    "status": "active",
+    "modificationLog": []
+  },
+  {
+    "id": "e10",
+    "firstName": "Jennifer",
+    "lastName": "Lee",
+    "email": "jennifer.lee@payflow.com",
+    "department": "Operations",
+    "designation": "Operations Manager",
+    "basicSalary": 92000,
+    "joiningDate": "2020-10-22",
+    "status": "active",
+    "modificationLog": []
+  }
+]
