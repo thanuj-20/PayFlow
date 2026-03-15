@@ -5,15 +5,37 @@ import Sidebar from '../components/Sidebar';
 import { changePassword } from '../services/api';
 import toast from 'react-hot-toast';
 
+const inputClass = "w-full px-4 py-3 rounded-lg text-sm pr-10"
+  + " bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-primary)]"
+  + " focus:border-[var(--accent-primary)] focus:outline-none transition-colors";
+
+const PasswordInput = ({ label, value, onChange, show, onToggle }) => (
+  <div>
+    <label className="block text-sm text-[var(--text-secondary)] mb-1">{label}</label>
+    <div className="relative">
+      <input
+        type={show ? 'text' : 'password'}
+        value={value}
+        onChange={onChange}
+        className={inputClass}
+        required
+      />
+      <button
+        type="button"
+        onClick={onToggle}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+      >
+        {show ? <EyeOff size={16} /> : <Eye size={16} />}
+      </button>
+    </div>
+  </div>
+);
+
 const ChangePasswordPage = () => {
   const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [show, setShow] = useState({ current: false, new: false, confirm: false });
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
-
-  const inputClass = "w-full px-4 py-3 rounded-lg text-sm pr-10"
-    + " bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-primary)]"
-    + " focus:border-[var(--accent-primary)] focus:outline-none transition-colors";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,28 +59,6 @@ const ChangePasswordPage = () => {
       setLoading(false);
     }
   };
-
-  const PasswordInput = ({ field, label, showKey }) => (
-    <div>
-      <label className="block text-sm text-[var(--text-secondary)] mb-1">{label}</label>
-      <div className="relative">
-        <input
-          type={show[showKey] ? 'text' : 'password'}
-          value={form[field]}
-          onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
-          className={inputClass}
-          required
-        />
-        <button
-          type="button"
-          onClick={() => setShow(s => ({ ...s, [showKey]: !s[showKey] }))}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]"
-        >
-          {show[showKey] ? <EyeOff size={16} /> : <Eye size={16} />}
-        </button>
-      </div>
-    </div>
-  );
 
   return (
     <div className="app-layout">
@@ -96,11 +96,28 @@ const ChangePasswordPage = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <PasswordInput field="currentPassword" label="Current Password" showKey="current" />
-              <PasswordInput field="newPassword" label="New Password" showKey="new" />
-              <PasswordInput field="confirmPassword" label="Confirm New Password" showKey="confirm" />
+              <PasswordInput
+                label="Current Password"
+                value={form.currentPassword}
+                onChange={e => setForm(f => ({ ...f, currentPassword: e.target.value }))}
+                show={show.current}
+                onToggle={() => setShow(s => ({ ...s, current: !s.current }))}
+              />
+              <PasswordInput
+                label="New Password"
+                value={form.newPassword}
+                onChange={e => setForm(f => ({ ...f, newPassword: e.target.value }))}
+                show={show.new}
+                onToggle={() => setShow(s => ({ ...s, new: !s.new }))}
+              />
+              <PasswordInput
+                label="Confirm New Password"
+                value={form.confirmPassword}
+                onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                show={show.confirm}
+                onToggle={() => setShow(s => ({ ...s, confirm: !s.confirm }))}
+              />
 
-              {/* Strength hints */}
               {form.newPassword && (
                 <div className="space-y-1">
                   {[
