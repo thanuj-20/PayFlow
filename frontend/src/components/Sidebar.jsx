@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard, Users, CalendarCheck, CreditCard,
-  FileText, BarChart2, User, LogOut, Lock,
+  FileText, BarChart2, User, LogOut, Lock, Shield,
 } from 'lucide-react';
 import { authStore } from '../store/authStore';
 
@@ -19,6 +19,7 @@ const Sidebar = () => {
     { icon: CreditCard, label: 'Payroll', path: '/payroll' },
     { icon: FileText, label: 'Payslips', path: '/payslips' },
     { icon: BarChart2, label: 'Reports', path: '/reports' },
+    { icon: Shield, label: 'Audit Log', path: '/audit-log' },
     { icon: Lock, label: 'Change Password', path: '/change-password' },
   ];
 
@@ -74,7 +75,16 @@ const Sidebar = () => {
         })}
       </nav>
 
-      {/* Logout — always visible at bottom */}
+      {/* Ctrl+K hint */}
+      <div className="px-4 pb-2 flex-shrink-0">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--bg-elevated)] text-xs text-[var(--text-tertiary)] cursor-pointer hover:text-[var(--text-secondary)] transition-colors"
+          onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))}>
+          <span className="flex-1">Quick search</span>
+          <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-surface)] font-mono text-xs">Ctrl K</kbd>
+        </div>
+      </div>
+
+      {/* Logout */}
       <div className="p-4 flex-shrink-0 border-t border-[var(--border)]">
         <motion.button
           onClick={handleLogout}

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import StatCard from '../components/StatCard';
 import EmployeeTable from '../components/EmployeeTable';
-import { getEmployees, getAttendanceSummary, deactivateEmployee, getReportsSummary } from '../services/api';
+import { getEmployees, getAttendanceSummary, deactivateEmployee, getReportsSummary, getPayroll } from '../services/api';
 import toast from 'react-hot-toast';
 
 // SVG donut chart for attendance
@@ -103,6 +103,7 @@ const HRDashboard = () => {
   const [employees, setEmployees] = useState([]);
   const [attendanceSummary, setAttendanceSummary] = useState(null);
   const [reportData, setReportData] = useState(null);
+  const [payrollHistory, setPayrollHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deactivatingId, setDeactivatingId] = useState(null);
   const navigate = useNavigate();
@@ -110,14 +111,26 @@ const HRDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [employeesRes, attendanceRes, reportsRes] = await Promise.allSettled([
+        const [employeesRes, attendanceRes, reportsRes, payrollRes] = await Promise.allSettled([
           getEmployees(),
           getAttendanceSummary(),
           getReportsSummary(),
+          getPayroll(),
         ]);
         if (employeesRes.status === 'fulfilled') setEmployees(employeesRes.value.data);
         if (attendanceRes.status === 'fulfilled') setAttendanceSummary(attendanceRes.value.data);
         if (reportsRes.status === 'fulfilled') setReportData(reportsRes.value.data);
+        if (payrollRes.status === 'fulfilled') {
+          // Group approved payroll by month/year and sum net salary
+          const approved = payrollRes.value.data.filter(p => p.status === 'approved');
+          const grouped = {};
+          approved.forEach(p => {
+            const key = `${p.month} ${p.year}`;
+            if (!grouped[key]) grouped[key] = { label: p.month.slice(0, 3) + ' ' + p.year, total: 0 };
+            grouped[key].total += p.netSalary || 0;
+          });
+          setPayrollHistory(Object.values(grouped).slice(-6));
+        }
       } catch (error) {
         console.error('Failed to fetch data:', error);
       } finally {
@@ -175,7 +188,7 @@ const HRDashboard = () => {
           </div>
 
           {/* Charts Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             {/* Attendance Donut */}
             <motion.div
               className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-6"
@@ -203,6 +216,42 @@ const HRDashboard = () => {
                 <DeptChart departments={reportData.departmentBreakdown} total={activeEmployees || 1} />
               ) : (
                 <p className="text-sm text-[var(--text-secondary)]">Loading department data...</p>
+              )}
+            </motion.div>
+
+            {/* Payroll Trend */}
+            <motion.div
+              className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-6"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+            >
+              <h2 className="text-base font-bold text-[var(--text-primary)] mb-4">Monthly Payroll Cost</h2>
+              {payrollHistory.length === 0 ? (
+                <p className="text-sm text-[var(--text-secondary)]">No approved payroll yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {(() => {
+                    const max = Math.max(...payrollHistory.map(p => p.total));
+                    return payrollHistory.map((p, i) => (
+                      <div key={p.label}>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-[var(--text-secondary)]">{p.label}</span>
+                          <span className="font-mono font-semibold" style={{ color: 'var(--accent-secondary)' }}>
+                            ₹{(p.total / 100000).toFixed(1)}L
+                          </span>
+                        </div>
+                        <div className="h-5 rounded-lg overflow-hidden" style={{ background: 'var(--bg-elevated)' }}>
+                          <motion.div
+                            className="h-full rounded-lg"
+                            style={{ background: 'linear-gradient(90deg, var(--accent-secondary), #00B894)' }}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(p.total / max) * 100}%` }}
+                            transition={{ duration: 0.6, delay: i * 0.1 }}
+                          />
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
               )}
             </motion.div>
           </div>

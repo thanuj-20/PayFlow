@@ -226,3 +226,10 @@ body::after {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+@media print {
+  .sidebar, nav, button, .notification-bell { display: none !important; }
+  .main-content { margin-left: 0 !important; }
+  body { background: white !important; color: black !important; }
+  .card { border: 1px solid #ddd !important; background: white !important; }
+}

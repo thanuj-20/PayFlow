@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Calendar, Building, TrendingUp, TrendingDown, FileText, Clock, UserCheck, AlertCircle, Download } from 'lucide-react';
+import { Mail, Calendar, Building, TrendingUp, TrendingDown, FileText, Clock, UserCheck, AlertCircle, Download, Copy, Printer } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import { getEmployee, getMyPayslips, getMyPayroll, getAttendance, downloadPayslip } from '../services/api';
 import { authStore } from '../store/authStore';
@@ -146,7 +146,16 @@ const EmployeeProfilePage = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-[var(--text-secondary)] mb-1">Employee ID</p>
-                  <p className="font-mono text-[var(--accent-primary)] font-bold">{employee.id}</p>
+                  <div className="flex items-center gap-2 justify-end">
+                    <p className="font-mono text-[var(--accent-primary)] font-bold">{employee.id}</p>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(employee.id); toast.success('Employee ID copied'); }}
+                      className="p-1 rounded text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] transition-colors"
+                      title="Copy ID"
+                    >
+                      <Copy size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -244,19 +253,39 @@ const EmployeeProfilePage = () => {
               {attendance.length === 0 ? (
                 <p className="text-[var(--text-secondary)] text-sm">No attendance records found</p>
               ) : (
-                <div className="grid grid-cols-3 gap-4">
-                  {[
-                    { label: 'Present', value: presentDays, icon: UserCheck, color: 'var(--accent-secondary)' },
-                    { label: 'Late', value: lateDays, icon: Clock, color: 'var(--accent-gold)' },
-                    { label: 'Absent', value: absentDays, icon: AlertCircle, color: 'var(--accent-danger)' },
-                  ].map(({ label, value, icon: Icon, color }) => (
-                    <div key={label} className="bg-[var(--bg-elevated)] rounded-xl p-4 text-center">
-                      <Icon size={24} className="mx-auto mb-2" style={{ color }} />
-                      <p className="text-2xl font-bold text-[var(--text-primary)]">{value}</p>
-                      <p className="text-sm text-[var(--text-secondary)]">{label}</p>
+                <>
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    {[
+                      { label: 'Present', value: presentDays, icon: UserCheck, color: 'var(--accent-secondary)' },
+                      { label: 'Late', value: lateDays, icon: Clock, color: 'var(--accent-gold)' },
+                      { label: 'Absent', value: absentDays, icon: AlertCircle, color: 'var(--accent-danger)' },
+                    ].map(({ label, value, icon: Icon, color }) => (
+                      <div key={label} className="bg-[var(--bg-elevated)] rounded-xl p-4 text-center">
+                        <Icon size={24} className="mx-auto mb-2" style={{ color }} />
+                        <p className="text-2xl font-bold text-[var(--text-primary)]">{value}</p>
+                        <p className="text-sm text-[var(--text-secondary)]">{label}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Attendance rate */}
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-[var(--text-secondary)]">Attendance Rate</span>
+                      <span className="font-semibold" style={{ color: 'var(--accent-secondary)' }}>
+                        {Math.round(((presentDays + lateDays) / attendance.length) * 100)}%
+                      </span>
                     </div>
-                  ))}
-                </div>
+                    <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-elevated)' }}>
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ background: 'linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))' }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.round(((presentDays + lateDays) / attendance.length) * 100)}%` }}
+                        transition={{ duration: 0.8, delay: 0.5 }}
+                      />
+                    </div>
+                  </div>
+                </>
               )}
             </motion.div>
 
@@ -305,6 +334,14 @@ const EmployeeProfilePage = () => {
                           {downloading === ps.id
                             ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                             : <Download size={16} />}
+                        </button>
+                        <button
+                          onClick={() => window.print()}
+                          className="p-2 rounded-lg transition-colors hover:bg-[var(--bg-surface)]"
+                          style={{ color: 'var(--text-secondary)' }}
+                          title="Print"
+                        >
+                          <Printer size={16} />
                         </button>
                       </div>
                     </div>

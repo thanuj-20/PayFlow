@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 import { Sun, Moon } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { authStore } from './store/authStore';
 import { themeStore } from './store/themeStore';
 import LoginPage from './pages/LoginPage';
@@ -19,7 +20,9 @@ import MyPayslipsPage from './pages/MyPayslipsPage';
 import LeavePage from './pages/LeavePage';
 import MyLeavePage from './pages/MyLeavePage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
+import AuditLogPage from './pages/AuditLogPage';
 import NotificationBell from './components/NotificationBell';
+import QuickSearch from './components/QuickSearch';
 
 const ProtectedRoute = ({ children, hrOnly = false }) => {
   const { isAuthenticated, role } = authStore();
@@ -29,15 +32,40 @@ const ProtectedRoute = ({ children, hrOnly = false }) => {
 };
 
 const App = () => {
-  const { isAuthenticated, role } = authStore();
+  const { isAuthenticated, role, token, clearAuth } = authStore();
   const { isDark, toggleTheme } = themeStore();
+  const [warnedExpiry, setWarnedExpiry] = useState(false);
 
   useEffect(() => {
     document.documentElement.className = isDark ? 'dark' : 'light';
   }, [isDark]);
 
+  // Session timeout warning — 5 min before expiry
+  useEffect(() => {
+    if (!token || !isAuthenticated) return;
+    const interval = setInterval(() => {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const msLeft = payload.exp * 1000 - Date.now();
+        if (msLeft < 5 * 60 * 1000 && msLeft > 0 && !warnedExpiry) {
+          setWarnedExpiry(true);
+          toast('Your session expires in 5 minutes. Please save your work.', {
+            icon: '⏰',
+            duration: 8000,
+          });
+        }
+        if (msLeft <= 0) {
+          clearAuth();
+          window.location.href = '/login';
+        }
+      } catch {}
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [token, isAuthenticated, warnedExpiry, clearAuth]);
+
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      {/* Theme toggle */}
       <button
         onClick={toggleTheme}
         className="fixed top-4 right-16 z-50 p-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
@@ -46,24 +74,19 @@ const App = () => {
         {isDark ? <Sun size={18} /> : <Moon size={18} />}
       </button>
 
+      {/* Notification bell */}
       {isAuthenticated && (
         <div className="fixed top-4 right-4 z-50">
           <NotificationBell />
         </div>
       )}
 
+      {/* Ctrl+K quick search */}
+      {isAuthenticated && <QuickSearch />}
+
       <AnimatePresence mode="wait">
         <Routes>
-          <Route
-            path="/"
-            element={
-              isAuthenticated ? (
-                <Navigate to={role === 'hr' ? '/dashboard' : '/my-profile'} replace />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
+          <Route path="/" element={isAuthenticated ? <Navigate to={role === 'hr' ? '/dashboard' : '/my-profile'} replace /> : <Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<ProtectedRoute hrOnly><HRDashboard /></ProtectedRoute>} />
           <Route path="/employees" element={<ProtectedRoute hrOnly><EmployeesPage /></ProtectedRoute>} />
@@ -72,6 +95,7 @@ const App = () => {
           <Route path="/payroll" element={<ProtectedRoute hrOnly><PayrollPage /></ProtectedRoute>} />
           <Route path="/payslips" element={<ProtectedRoute hrOnly><PayslipsPage /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute hrOnly><ReportsPage /></ProtectedRoute>} />
+          <Route path="/audit-log" element={<ProtectedRoute hrOnly><AuditLogPage /></ProtectedRoute>} />
           <Route path="/my-attendance" element={<ProtectedRoute><MyAttendancePage /></ProtectedRoute>} />
           <Route path="/my-payroll" element={<ProtectedRoute><MyPayrollPage /></ProtectedRoute>} />
           <Route path="/my-payslips" element={<ProtectedRoute><MyPayslipsPage /></ProtectedRoute>} />
