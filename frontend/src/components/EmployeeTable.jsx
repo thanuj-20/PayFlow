@@ -1,28 +1,17 @@
 import { motion } from 'framer-motion';
-import { Edit, UserX } from 'lucide-react';
+import { Edit, UserX, Trash2 } from 'lucide-react';
 
-const EmployeeTable = ({ employees, onEdit, onDeactivate, deactivatingId }) => {
+const EmployeeTable = ({ employees, onEdit, onDeactivate, onDelete, deactivatingId, deletingId }) => {
   const container = {
     hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.07,
-      },
-    },
+    show: { opacity: 1, transition: { staggerChildren: 0.07 } },
   };
-
-  const item = {
-    hidden: { opacity: 0, y: 16 },
-    show: { opacity: 1, y: 0 },
-  };
+  const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
 
   return (
     <motion.div
       className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl overflow-hidden"
-      variants={container}
-      initial="hidden"
-      animate="show"
+      variants={container} initial="hidden" animate="show"
     >
       <table className="w-full">
         <thead className="bg-[var(--bg-elevated)]">
@@ -39,9 +28,7 @@ const EmployeeTable = ({ employees, onEdit, onDeactivate, deactivatingId }) => {
           {employees.map((employee, index) => (
             <motion.tr
               key={employee.id}
-              className={`border-t border-[var(--border)] ${
-                index % 2 === 0 ? 'bg-[var(--bg-surface)]' : 'bg-[var(--bg-elevated)]'
-              }`}
+              className={`border-t border-[var(--border)] ${index % 2 === 0 ? 'bg-[var(--bg-surface)]' : 'bg-[var(--bg-elevated)]'}`}
               variants={item}
               whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
             >
@@ -51,41 +38,58 @@ const EmployeeTable = ({ employees, onEdit, onDeactivate, deactivatingId }) => {
               <td className="px-6 py-4 text-sm text-[var(--text-secondary)]">{employee.department}</td>
               <td className="px-6 py-4 text-sm text-[var(--text-secondary)]">{employee.designation}</td>
               <td className="px-6 py-4 text-sm text-[var(--accent-secondary)] font-medium">
-                ₹{employee.basicSalary.toLocaleString('en-IN')}
+                ₹{employee.basicSalary?.toLocaleString('en-IN')}
               </td>
               <td className="px-6 py-4">
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    employee.status === 'active'
-                      ? 'bg-[var(--glow-teal)] text-[var(--accent-secondary)]'
-                      : 'bg-red-500/20 text-red-400'
-                  }`}
-                >
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  employee.status === 'active'
+                    ? 'bg-[var(--glow-teal)] text-[var(--accent-secondary)]'
+                    : 'bg-red-500/20 text-red-400'
+                }`}>
                   {employee.status}
                 </span>
               </td>
               <td className="px-6 py-4">
                 <div className="flex gap-2">
+                  {/* Edit — always available */}
                   <motion.button
                     onClick={() => onEdit(employee)}
                     className="p-2 rounded-lg bg-[var(--glow-violet)] text-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-white transition-colors"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                    title="Edit employee"
                   >
                     <Edit size={16} />
                   </motion.button>
-                  <motion.button
-                    onClick={() => onDeactivate(employee)}
-                    disabled={employee.status === 'inactive' || deactivatingId === employee.id}
-                    className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    title={employee.status === 'inactive' ? 'Already deactivated' : 'Deactivate employee'}
-                  >
-                    {deactivatingId === employee.id
-                      ? <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
-                      : <UserX size={16} />}
-                  </motion.button>
+
+                  {/* Deactivate — only for active employees */}
+                  {employee.status === 'active' && (
+                    <motion.button
+                      onClick={() => onDeactivate(employee)}
+                      disabled={deactivatingId === employee.id}
+                      className="p-2 rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500 hover:text-white transition-colors disabled:opacity-50"
+                      whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                      title="Deactivate employee"
+                    >
+                      {deactivatingId === employee.id
+                        ? <div className="w-4 h-4 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                        : <UserX size={16} />}
+                    </motion.button>
+                  )}
+
+                  {/* Hard Delete — only for inactive employees */}
+                  {employee.status === 'inactive' && (
+                    <motion.button
+                      onClick={() => onDelete(employee)}
+                      disabled={deletingId === employee.id}
+                      className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50"
+                      whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                      title="Permanently delete employee"
+                    >
+                      {deletingId === employee.id
+                        ? <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                        : <Trash2 size={16} />}
+                    </motion.button>
+                  )}
                 </div>
               </td>
             </motion.tr>

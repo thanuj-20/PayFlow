@@ -227,7 +227,9 @@ const HRDashboard = () => {
                 employees={recentEmployees}
                 onEdit={() => {}}
                 onDeactivate={handleDeactivate}
+                onDelete={() => {}}
                 deactivatingId={deactivatingId}
+                deletingId={null}
               />
             ) : (
               <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-12 text-center">

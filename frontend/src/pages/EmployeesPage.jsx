@@ -4,7 +4,7 @@ import { Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import EmployeeTable from '../components/EmployeeTable';
 import EmployeeModal from '../components/EmployeeModal';
-import { getEmployees, createEmployee, updateEmployee, deactivateEmployee } from '../services/api';
+import { getEmployees, createEmployee, updateEmployee, deactivateEmployee, hardDeleteEmployee } from '../services/api';
 import toast from 'react-hot-toast';
 
 const PAGE_SIZE = 8;
@@ -18,6 +18,7 @@ const EmployeesPage = () => {
   const [filters, setFilters] = useState({ department: '', status: '', search: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const [deactivatingId, setDeactivatingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => { fetchEmployees(); }, []);
 
@@ -82,6 +83,22 @@ const EmployeesPage = () => {
         toast.error('Failed to deactivate employee');
       } finally {
         setDeactivatingId(null);
+      }
+    }
+  };
+
+  const handleDeleteEmployee = async (employee) => {
+    if (deletingId) return;
+    if (window.confirm(`Permanently delete ${employee.firstName} ${employee.lastName}? This will remove ALL their records and cannot be undone.`)) {
+      setDeletingId(employee.id);
+      try {
+        await hardDeleteEmployee(employee.id);
+        toast.success('Employee permanently deleted');
+        fetchEmployees();
+      } catch (err) {
+        toast.error(err.response?.data?.error || 'Failed to delete employee');
+      } finally {
+        setDeletingId(null);
       }
     }
   };
@@ -161,7 +178,9 @@ const EmployeesPage = () => {
                 employees={paginated}
                 onEdit={(emp) => { setEditingEmployee(emp); setModalOpen(true); }}
                 onDeactivate={handleDeactivateEmployee}
+                onDelete={handleDeleteEmployee}
                 deactivatingId={deactivatingId}
+                deletingId={deletingId}
               />
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-6">

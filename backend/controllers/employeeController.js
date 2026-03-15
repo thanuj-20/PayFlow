@@ -144,24 +144,44 @@ const deleteEmployee = async (req, res) => {
       return res.status(404).json({ error: 'Employee not found' });
     }
 
-    const modificationEntry = {
-      changedAt: new Date(),
-      changedBy: req.user.userId,
-      reason: 'Employee deactivated'
-    };
+    if (employee.status === 'active') {
+      return res.status(400).json({ error: 'Cannot delete an active employee. Deactivate them first.' });
+    }
+
+    // Hard delete employee + all related records
+    await Promise.all([
+      db.collection('employees').deleteOne({ id: req.params.id }),
+      db.collection('users').deleteOne({ employeeId: req.params.id }),
+      db.collection('attendance').deleteMany({ employeeId: req.params.id }),
+      db.collection('payroll').deleteMany({ employeeId: req.params.id }),
+      db.collection('payslips').deleteMany({ employeeId: req.params.id }),
+      db.collection('leaves').deleteMany({ employeeId: req.params.id }),
+    ]);
+
+    res.json({ message: 'Employee permanently deleted' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const deactivateEmployee = async (req, res) => {
+  try {
+    const db = req.db;
+    const employee = await db.collection('employees').findOne({ id: req.params.id });
+    if (!employee) return res.status(404).json({ error: 'Employee not found' });
+    if (employee.status === 'inactive') return res.status(400).json({ error: 'Employee already inactive' });
 
     await db.collection('employees').updateOne(
       { id: req.params.id },
       {
         $set: { status: 'inactive' },
-        $push: { modificationLog: modificationEntry }
+        $push: { modificationLog: { changedAt: new Date(), changedBy: req.user.userId, reason: 'Employee deactivated' } }
       }
     );
-
     res.json({ message: 'Employee deactivated' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-module.exports = { getAllEmployees, getEmployeeById, createEmployee, updateEmployee, deleteEmployee };
+module.exports = { getAllEmployees, getEmployeeById, createEmployee, updateEmployee, deleteEmployee, deactivateEmployee };
