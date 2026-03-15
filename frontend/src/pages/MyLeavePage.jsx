@@ -14,11 +14,24 @@ const MyLeavePage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ leaveType: 'casual', startDate: '', endDate: '', reason: '' });
 
+  const LEAVE_LIMITS = { casual: 2, sick: 3, paid: 3 };
+  const ALLOWED_TYPES = ['casual', 'sick', 'paid'];
+
   const fetchAll = async () => {
     try {
       const [lRes, bRes] = await Promise.allSettled([getLeaves(), getLeaveBalance()]);
       if (lRes.status === 'fulfilled') setLeaves(lRes.value.data);
-      if (bRes.status === 'fulfilled') setBalance(bRes.value.data);
+      if (bRes.status === 'fulfilled') {
+        const filtered = bRes.value.data
+          .filter(lb => ['casual', 'sick', 'unpaid'].includes(lb.type))
+          .map(lb => ({
+            ...lb,
+            type: lb.type === 'unpaid' ? 'paid' : lb.type,
+            limit: LEAVE_LIMITS[lb.type === 'unpaid' ? 'paid' : lb.type] ?? lb.limit,
+            remaining: Math.min(lb.remaining, LEAVE_LIMITS[lb.type === 'unpaid' ? 'paid' : lb.type] ?? lb.remaining),
+          }));
+        setBalance(filtered);
+      }
     } catch {
       toast.error('Failed to load leaves');
     } finally {
@@ -172,8 +185,7 @@ const MyLeavePage = () => {
                     <select value={form.leaveType} onChange={e => setForm(p => ({ ...p, leaveType: e.target.value }))} className={inputClass}>
                       <option value="casual">Casual Leave</option>
                       <option value="sick">Sick Leave</option>
-                      <option value="earned">Earned Leave</option>
-                      <option value="unpaid">Unpaid Leave</option>
+                      <option value="unpaid">Paid Leave</option>
                     </select>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
