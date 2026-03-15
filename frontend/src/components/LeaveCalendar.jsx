@@ -10,8 +10,7 @@ const typeColor = (type) => {
   const t = type.toLowerCase();
   if (t.includes('sick')) return '#FF4365';
   if (t.includes('casual')) return '#FFB547';
-  if (t.includes('earned')) return '#00D4AA';
-  return '#6C63FF';
+  return '#00D4AA'; // paid / unpaid
 };
 
 const LeaveCalendar = ({ leaves = [] }) => {
@@ -99,8 +98,7 @@ const LeaveCalendar = ({ leaves = [] }) => {
         {[
           { label: 'Sick', color: '#FF4365' },
           { label: 'Casual', color: '#FFB547' },
-          { label: 'Earned', color: '#00D4AA' },
-          { label: 'Other', color: '#6C63FF' },
+          { label: 'Paid', color: '#00D4AA' },
         ].map(({ label, color }) => (
           <div key={label} className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
             <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />

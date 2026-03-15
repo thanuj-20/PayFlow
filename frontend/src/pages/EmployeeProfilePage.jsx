@@ -180,7 +180,7 @@ const EmployeeProfilePage = () => {
                     <div>
                       <div className="text-xs text-[var(--text-secondary)]">Joining Date</div>
                       <div className="text-[var(--text-primary)]">
-                        {new Date(employee.joiningDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        {new Date(employee.joiningDate || employee.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
                       </div>
                     </div>
                   </div>

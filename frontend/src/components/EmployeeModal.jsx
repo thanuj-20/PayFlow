@@ -9,7 +9,9 @@ const EmployeeModal = ({ isOpen, onClose, employee, onSubmit, isEdit = false }) 
   useEffect(() => {
     reset(employee || {
       firstName: '', lastName: '', email: '',
-      department: '', designation: '', basicSalary: '', joiningDate: '', modificationReason: '',
+      department: '', designation: '', basicSalary: '',
+      joiningDate: new Date().toISOString().split('T')[0],
+      modificationReason: '',
     });
   }, [employee, isOpen, reset]);
 

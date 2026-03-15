@@ -12,10 +12,17 @@ const MyLeavePage = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ leaveType: 'casual', startDate: '', endDate: '', reason: '' });
+  const today = new Date().toISOString().split('T')[0];
+  const [form, setForm] = useState({ leaveType: 'casual', startDate: today, days: 1, reason: '' });
 
-  const LEAVE_LIMITS = { casual: 2, sick: 3, paid: 3 };
-  const ALLOWED_TYPES = ['casual', 'sick', 'paid'];
+  const getEndDate = (start, days) => {
+    if (!start || !days) return '';
+    const d = new Date(start);
+    d.setDate(d.getDate() + Number(days) - 1);
+    return d.toISOString().split('T')[0];
+  };
+
+  const LEAVE_LIMITS = { casual: 2, sick: 3, unpaid: 3 };
 
   const fetchAll = async () => {
     try {
@@ -24,12 +31,16 @@ const MyLeavePage = () => {
       if (bRes.status === 'fulfilled') {
         const filtered = bRes.value.data
           .filter(lb => ['casual', 'sick', 'unpaid'].includes(lb.type))
-          .map(lb => ({
-            ...lb,
-            type: lb.type === 'unpaid' ? 'paid' : lb.type,
-            limit: LEAVE_LIMITS[lb.type === 'unpaid' ? 'paid' : lb.type] ?? lb.limit,
-            remaining: Math.min(lb.remaining, LEAVE_LIMITS[lb.type === 'unpaid' ? 'paid' : lb.type] ?? lb.remaining),
-          }));
+          .map(lb => {
+            const limit = LEAVE_LIMITS[lb.type];
+            const used = lb.used || 0;
+            return {
+              ...lb,
+              type: lb.type === 'unpaid' ? 'paid' : lb.type,
+              limit,
+              remaining: Math.max(0, limit - used),
+            };
+          });
         setBalance(filtered);
       }
     } catch {
@@ -45,10 +56,10 @@ const MyLeavePage = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await applyLeave(form);
+      await applyLeave({ ...form, endDate: getEndDate(form.startDate, form.days) });
       toast.success('Leave application submitted');
       setShowForm(false);
-      setForm({ leaveType: 'casual', startDate: '', endDate: '', reason: '' });
+      setForm({ leaveType: 'casual', startDate: today, days: 1, reason: '' });
       fetchAll();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to apply for leave');
@@ -80,7 +91,7 @@ const MyLeavePage = () => {
             {balance.map((lb, i) => (
               <motion.div key={lb.type} className="card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
                 <p className="text-xs text-[var(--text-secondary)] capitalize mb-1">{lb.type} Leave</p>
-                <p className="text-2xl font-bold font-mono" style={{ color: lb.remaining === 0 ? 'var(--accent-danger)' : 'var(--accent-secondary)' }}>
+                <p className="text-2xl font-bold font-mono" style={{ color: lb.remaining === 0 ? '#ef4444' : lb.remaining < lb.limit / 2 ? '#f59e0b' : '#22c55e' }}>
                   {lb.remaining}
                 </p>
                 <p className="text-xs text-[var(--text-tertiary)]">of {lb.limit} days left</p>
@@ -88,7 +99,7 @@ const MyLeavePage = () => {
                   <div className="mt-2 h-1.5 rounded-full bg-[var(--border)] overflow-hidden">
                     <div className="h-full rounded-full transition-all" style={{
                       width: `${Math.max(0, (lb.remaining / lb.limit) * 100)}%`,
-                      background: lb.remaining > 3 ? 'var(--accent-secondary)' : 'var(--accent-danger)'
+                      background: lb.remaining === 0 ? '#ef4444' : lb.remaining < lb.limit / 2 ? '#f59e0b' : '#22c55e'
                     }} />
                   </div>
                 )}
@@ -188,14 +199,20 @@ const MyLeavePage = () => {
                       <option value="unpaid">Paid Leave</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Number of Days</label>
+                    <input type="number" min={1} max={LEAVE_LIMITS[form.leaveType]} value={form.days}
+                      onChange={e => setForm(p => ({ ...p, days: Math.min(Number(e.target.value), LEAVE_LIMITS[p.leaveType]) }))
+                      } className={inputClass} required />
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">From</label>
-                      <input type="date" value={form.startDate} onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))} className={inputClass} required />
+                      <input type="date" min={today} value={form.startDate} onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))} className={inputClass} required />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">To</label>
-                      <input type="date" value={form.endDate} onChange={e => setForm(p => ({ ...p, endDate: e.target.value }))} className={inputClass} required />
+                      <input type="date" value={getEndDate(form.startDate, form.days)} className={`${inputClass} opacity-60 cursor-not-allowed`} readOnly />
                     </div>
                   </div>
                   <div>
