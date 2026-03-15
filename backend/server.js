@@ -45,7 +45,9 @@ async function startServer() {
   console.log('MONGO_URI set:', !!process.env.MONGO_URI);
 
   const client = new MongoClient(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 15000,
+    serverSelectionTimeoutMS: 30000,
+    connectTimeoutMS: 30000,
+    socketTimeoutMS: 30000,
   });
 
   await client.connect();
