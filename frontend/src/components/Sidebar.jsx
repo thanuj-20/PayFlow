@@ -27,7 +27,6 @@ const Sidebar = () => {
     { icon: User, label: 'My Profile', path: '/my-profile' },
     { icon: CalendarCheck, label: 'My Attendance', path: '/my-attendance' },
     { icon: FileText, label: 'My Leaves', path: '/my-leaves' },
-    { icon: CreditCard, label: 'My Payroll', path: '/my-payroll' },
     { icon: FileText, label: 'My Payslips', path: '/my-payslips' },
     { icon: Lock, label: 'Change Password', path: '/change-password' },
   ];
