@@ -58,7 +58,7 @@ const sendWelcomeEmail = async (employee, plainPassword) => {
             <table style="width:100%;border-collapse:collapse;">
               <tr>
                 <td style="color:#94A3B8;font-size:13px;padding:6px 0;">Login URL</td>
-                <td style="font-family:monospace;color:#6C63FF;font-size:13px;text-align:right;">http://localhost:5173</td>
+                <td style="font-family:monospace;color:#6C63FF;font-size:13px;text-align:right;">${process.env.FRONTEND_URL || 'https://payflow-f.onrender.com'}</td>
               </tr>
               <tr>
                 <td style="color:#94A3B8;font-size:13px;padding:6px 0;">Email</td>
