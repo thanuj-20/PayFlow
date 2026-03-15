@@ -6,7 +6,7 @@ services:
     rootDir: backend
     buildCommand: npm install
     startCommand: node server.js
-    nodeVersion: 18
+    nodeVersion: 20
     envVars:
       - key: MONGO_URI
         sync: false
