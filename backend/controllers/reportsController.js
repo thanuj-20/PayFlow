@@ -1,3 +1,35 @@
+const exportCSV = async (req, res) => {
+  try {
+    const db = req.db;
+    const [employees, payroll] = await Promise.all([
+      db.collection('employees').find({}).toArray(),
+      db.collection('payroll').find({ status: 'approved' }).toArray(),
+    ]);
+
+    const rows = employees.map(emp => {
+      const p = payroll.find(r => r.employeeId === emp.id) || {};
+      return [
+        emp.id, emp.firstName, emp.lastName, emp.email,
+        emp.department, emp.designation, emp.basicSalary,
+        p.hra || '', p.overtimePay || 0, p.lopDeduction || 0,
+        p.pfDeduction || '', p.professionalTax || '',
+        p.grossSalary || '', p.totalDeductions || '',
+        p.netSalary || '', p.month || '', p.year || '',
+        emp.status, emp.joiningDate
+      ].join(',');
+    });
+
+    const header = 'ID,First Name,Last Name,Email,Department,Designation,Basic Salary,HRA,Overtime Pay,LOP Deduction,PF,Prof Tax,Gross Salary,Total Deductions,Net Salary,Month,Year,Status,Joining Date';
+    const csv = [header, ...rows].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=payflow-report-${new Date().toISOString().split('T')[0]}.csv`);
+    res.send(csv);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 const getReportsSummary = async (req, res) => {
   try {
     const db = req.db;
@@ -81,4 +113,4 @@ const getReportsSummary = async (req, res) => {
   }
 };
 
-module.exports = { getReportsSummary };
+module.exports = { getReportsSummary, exportCSV };

@@ -16,7 +16,6 @@ const EmployeeModal = ({ isOpen, onClose, employee, onSubmit, isEdit = false }) 
   const onFormSubmit = (data) => {
     onSubmit(data);
     reset();
-    onClose();
   };
 
   const inputClass = "w-full px-4 py-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:border-[var(--accent-primary)] focus:shadow-[0_0_0_3px_var(--glow-violet)] transition-all";

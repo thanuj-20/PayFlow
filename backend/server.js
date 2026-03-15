@@ -9,6 +9,7 @@ const payrollRoutes = require('./routes/payroll');
 const payslipsRoutes = require('./routes/payslips');
 const reportsRoutes = require('./routes/reports');
 const leavesRoutes = require('./routes/leaves');
+const notificationsRoutes = require('./routes/notifications');
 
 const app = express();
 
@@ -33,6 +34,7 @@ async function startServer() {
   app.use('/api/payslips', payslipsRoutes);
   app.use('/api/reports', reportsRoutes);
   app.use('/api/leaves', leavesRoutes);
+  app.use('/api/notifications', notificationsRoutes);
 
   app.use((err, req, res, next) => {
     res.status(500).json({ error: err.message });

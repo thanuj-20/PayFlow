@@ -35,7 +35,7 @@
 }
 
 body {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'Roboto', sans-serif;
   background: var(--bg-base);
   color: var(--text-primary);
   margin: 0;
@@ -44,7 +44,7 @@ body {
 }
 
 h1, h2, h3, .logo {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 body::before {

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Building2, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
+import { Users, Building2, DollarSign, TrendingUp, AlertCircle, Download } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-import { getReportsSummary } from '../services/api';
+import { getReportsSummary, exportReportsCSV } from '../services/api';
+import toast from 'react-hot-toast';
 
 const ShimmerCard = () => (
   <motion.div
@@ -30,6 +31,25 @@ const ReportsPage = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      const res = await exportReportsCSV();
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `payflow-report-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('Report exported');
+    } catch {
+      toast.error('Export failed');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -98,6 +118,12 @@ const ReportsPage = () => {
             <h1 className="page-title">Reports & Analytics</h1>
             <p className="page-subtitle">Comprehensive workforce insights</p>
           </div>
+          <button onClick={handleExportCSV} disabled={exporting} className="btn-primary flex items-center gap-2">
+            {exporting
+              ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              : <Download size={16} />}
+            {exporting ? 'Exporting...' : 'Export CSV'}
+          </button>
         </div>
 
         {/* Workforce Summary */}

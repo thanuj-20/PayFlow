@@ -1,10 +1,44 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Calendar, Building, TrendingUp, TrendingDown, FileText, Clock, UserCheck, AlertCircle } from 'lucide-react';
+import { Mail, Calendar, Building, TrendingUp, TrendingDown, FileText, Clock, UserCheck, AlertCircle, Download } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-import { getEmployee, getMyPayslips, getMyPayroll, getAttendance } from '../services/api';
+import { getEmployee, getMyPayslips, getMyPayroll, getAttendance, downloadPayslip } from '../services/api';
 import { authStore } from '../store/authStore';
 import toast from 'react-hot-toast';
+
+const fmt = (n) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
+
+// Mini bar chart for salary history
+const SalaryChart = ({ payslips }) => {
+  if (payslips.length === 0) return <p className="text-sm text-[var(--text-secondary)]">No salary history yet</p>;
+  const sorted = [...payslips].sort((a, b) => a.year - b.year || 0);
+  const max = Math.max(...sorted.map(p => p.netSalary));
+  return (
+    <div className="space-y-3">
+      {sorted.map((ps, i) => (
+        <div key={ps.id}>
+          <div className="flex justify-between text-xs mb-1">
+            <span className="text-[var(--text-secondary)]">{ps.month.slice(0, 3)} {ps.year}</span>
+            <span className="font-mono font-semibold" style={{ color: 'var(--accent-secondary)' }}>{fmt(ps.netSalary)}</span>
+          </div>
+          <div className="h-6 rounded-lg overflow-hidden" style={{ background: 'var(--bg-elevated)' }}>
+            <motion.div
+              className="h-full rounded-lg flex items-center justify-end px-2"
+              style={{ background: 'linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))' }}
+              initial={{ width: 0 }}
+              animate={{ width: `${(ps.netSalary / max) * 100}%` }}
+              transition={{ duration: 0.6, delay: i * 0.08 }}
+            >
+              {ps.netSalary / max > 0.3 && (
+                <span className="text-xs text-white font-mono">{fmt(ps.netSalary)}</span>
+              )}
+            </motion.div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const EmployeeProfilePage = () => {
   const [employee, setEmployee] = useState(null);
@@ -12,6 +46,7 @@ const EmployeeProfilePage = () => {
   const [payroll, setPayroll] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(null);
   const { employeeId } = authStore();
 
   useEffect(() => {
@@ -25,42 +60,50 @@ const EmployeeProfilePage = () => {
         setLoading(false);
         return;
       }
-
       const [payslipRes, payrollRes, attendanceRes] = await Promise.allSettled([
         getMyPayslips(employeeId),
         getMyPayroll(employeeId),
         getAttendance({ employeeId }),
       ]);
-
       if (payslipRes.status === 'fulfilled') setPayslips(payslipRes.value.data);
       if (payrollRes.status === 'fulfilled') setPayroll(payrollRes.value.data);
       if (attendanceRes.status === 'fulfilled') setAttendance(attendanceRes.value.data);
-
       setLoading(false);
     };
     fetchAll();
   }, [employeeId]);
 
-  const formatCurrency = (amount) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
+  const handleDownload = async (ps) => {
+    setDownloading(ps.id);
+    try {
+      const res = await downloadPayslip(ps.id);
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `payslip-${ps.month}-${ps.year}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('Payslip downloaded');
+    } catch {
+      toast.error('Download failed');
+    } finally {
+      setDownloading(null);
+    }
+  };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[var(--bg-base)]">
-        <Sidebar />
-        <div className="ml-60 page-content p-8 text-center py-12 text-[var(--text-secondary)]">Loading profile...</div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen bg-[var(--bg-base)]">
+      <Sidebar />
+      <div className="ml-60 page-content p-8 text-center py-12 text-[var(--text-secondary)]">Loading profile...</div>
+    </div>
+  );
 
-  if (!employee) {
-    return (
-      <div className="min-h-screen bg-[var(--bg-base)]">
-        <Sidebar />
-        <div className="ml-60 page-content p-8 text-center py-12 text-[var(--text-secondary)]">Profile not found</div>
-      </div>
-    );
-  }
+  if (!employee) return (
+    <div className="min-h-screen bg-[var(--bg-base)]">
+      <Sidebar />
+      <div className="ml-60 page-content p-8 text-center py-12 text-[var(--text-secondary)]">Profile not found</div>
+    </div>
+  );
 
   const initials = `${employee.firstName[0]}${employee.lastName[0]}`.toUpperCase();
   const presentDays = attendance.filter(a => a.status === 'present').length;
@@ -151,20 +194,32 @@ const EmployeeProfilePage = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-[var(--text-secondary)]">Basic Salary</span>
-                      <span className="font-mono font-bold text-[var(--text-primary)]">{formatCurrency(employee.basicSalary)}</span>
+                      <span className="font-mono font-bold text-[var(--text-primary)]">{fmt(latestPayroll.basicSalary)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-[var(--text-secondary)] flex items-center gap-1"><TrendingUp size={14} className="text-green-500" /> Bonus</span>
-                      <span className="font-mono text-green-500">+{formatCurrency(latestPayroll.bonus)}</span>
+                      <span className="text-sm text-[var(--text-secondary)]">HRA</span>
+                      <span className="font-mono text-green-500">+{fmt(latestPayroll.hra)}</span>
                     </div>
+                    {latestPayroll.overtimePay > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-[var(--text-secondary)] flex items-center gap-1"><TrendingUp size={14} className="text-green-500" /> Overtime</span>
+                        <span className="font-mono text-green-500">+{fmt(latestPayroll.overtimePay)}</span>
+                      </div>
+                    )}
+                    {latestPayroll.lopDays > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-[var(--text-secondary)]">LOP ({latestPayroll.lopDays} days)</span>
+                        <span className="font-mono text-red-400">-{fmt(latestPayroll.lopDeduction)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-[var(--text-secondary)] flex items-center gap-1"><TrendingDown size={14} className="text-red-400" /> Deductions</span>
-                      <span className="font-mono text-red-400">-{formatCurrency(latestPayroll.deductions)}</span>
+                      <span className="text-sm text-[var(--text-secondary)] flex items-center gap-1"><TrendingDown size={14} className="text-red-400" /> PF + Prof Tax</span>
+                      <span className="font-mono text-red-400">-{fmt(latestPayroll.totalDeductions)}</span>
                     </div>
                     <div className="h-px" style={{ background: 'var(--border)' }} />
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-[var(--text-primary)]">Net Salary</span>
-                      <span className="font-mono font-bold text-xl" style={{ color: 'var(--accent-secondary)' }}>{formatCurrency(latestPayroll.netSalary)}</span>
+                      <span className="font-mono font-bold text-xl" style={{ color: 'var(--accent-secondary)' }}>{fmt(latestPayroll.netSalary)}</span>
                     </div>
                     <p className="text-xs text-[var(--text-tertiary)]">Last processed: {latestPayroll.month} {latestPayroll.year}</p>
                   </div>
@@ -172,7 +227,7 @@ const EmployeeProfilePage = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-[var(--text-secondary)]">Basic Salary</span>
-                      <span className="font-mono font-bold text-xl" style={{ color: 'var(--accent-secondary)' }}>{formatCurrency(employee.basicSalary)}</span>
+                      <span className="font-mono font-bold text-xl" style={{ color: 'var(--accent-secondary)' }}>{fmt(employee.basicSalary)}</span>
                     </div>
                     <p className="text-xs text-[var(--text-tertiary)]">Payroll not yet processed</p>
                   </div>
@@ -190,29 +245,34 @@ const EmployeeProfilePage = () => {
                 <p className="text-[var(--text-secondary)] text-sm">No attendance records found</p>
               ) : (
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-[var(--bg-elevated)] rounded-xl p-4 text-center">
-                    <UserCheck size={24} className="mx-auto mb-2 text-[var(--accent-secondary)]" />
-                    <p className="text-2xl font-bold text-[var(--text-primary)]">{presentDays}</p>
-                    <p className="text-sm text-[var(--text-secondary)]">Present</p>
-                  </div>
-                  <div className="bg-[var(--bg-elevated)] rounded-xl p-4 text-center">
-                    <Clock size={24} className="mx-auto mb-2 text-[var(--accent-gold)]" />
-                    <p className="text-2xl font-bold text-[var(--text-primary)]">{lateDays}</p>
-                    <p className="text-sm text-[var(--text-secondary)]">Late</p>
-                  </div>
-                  <div className="bg-[var(--bg-elevated)] rounded-xl p-4 text-center">
-                    <AlertCircle size={24} className="mx-auto mb-2 text-[var(--accent-danger)]" />
-                    <p className="text-2xl font-bold text-[var(--text-primary)]">{absentDays}</p>
-                    <p className="text-sm text-[var(--text-secondary)]">Absent</p>
-                  </div>
+                  {[
+                    { label: 'Present', value: presentDays, icon: UserCheck, color: 'var(--accent-secondary)' },
+                    { label: 'Late', value: lateDays, icon: Clock, color: 'var(--accent-gold)' },
+                    { label: 'Absent', value: absentDays, icon: AlertCircle, color: 'var(--accent-danger)' },
+                  ].map(({ label, value, icon: Icon, color }) => (
+                    <div key={label} className="bg-[var(--bg-elevated)] rounded-xl p-4 text-center">
+                      <Icon size={24} className="mx-auto mb-2" style={{ color }} />
+                      <p className="text-2xl font-bold text-[var(--text-primary)]">{value}</p>
+                      <p className="text-sm text-[var(--text-secondary)]">{label}</p>
+                    </div>
+                  ))}
                 </div>
               )}
+            </motion.div>
+
+            {/* Salary History Chart */}
+            <motion.div
+              className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-6"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+            >
+              <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4">Net Salary History</h3>
+              <SalaryChart payslips={payslips} />
             </motion.div>
 
             {/* Payslip History */}
             <motion.div
               className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-6"
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
             >
               <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4">Payslip History</h3>
               {payslips.length === 0 ? (
@@ -230,9 +290,22 @@ const EmployeeProfilePage = () => {
                           <p className="text-xs text-[var(--text-secondary)]">{ps.department}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-mono font-bold" style={{ color: 'var(--accent-secondary)' }}>{formatCurrency(ps.netSalary)}</p>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--glow-teal)] text-[var(--accent-secondary)]">{ps.status}</span>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="font-mono font-bold" style={{ color: 'var(--accent-secondary)' }}>{fmt(ps.netSalary)}</p>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--glow-teal)] text-[var(--accent-secondary)]">{ps.status}</span>
+                        </div>
+                        <button
+                          onClick={() => handleDownload(ps)}
+                          disabled={downloading === ps.id}
+                          className="p-2 rounded-lg transition-colors hover:bg-[var(--bg-surface)]"
+                          style={{ color: 'var(--text-secondary)' }}
+                          title="Download PDF"
+                        >
+                          {downloading === ps.id
+                            ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            : <Download size={16} />}
+                        </button>
                       </div>
                     </div>
                   ))}

@@ -9,7 +9,7 @@ async function seedDatabase() {
     await client.connect();
     const db = client.db('payflow');
 
-    const collections = ['users', 'employees', 'attendance', 'payroll', 'payslips', 'leaves'];
+    const collections = ['users', 'employees', 'attendance', 'payroll', 'payslips', 'leaves', 'notifications'];
 
     for (const name of collections) {
       await db.collection(name).deleteMany({});

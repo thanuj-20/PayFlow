@@ -18,6 +18,8 @@ import MyPayrollPage from './pages/MyPayrollPage';
 import MyPayslipsPage from './pages/MyPayslipsPage';
 import LeavePage from './pages/LeavePage';
 import MyLeavePage from './pages/MyLeavePage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
+import NotificationBell from './components/NotificationBell';
 
 const ProtectedRoute = ({ children, hrOnly = false }) => {
   const { isAuthenticated, role } = authStore();
@@ -38,11 +40,17 @@ const App = () => {
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <button
         onClick={toggleTheme}
-        className="fixed top-4 right-4 z-50 p-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+        className="fixed top-4 right-16 z-50 p-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         title="Toggle theme"
       >
         {isDark ? <Sun size={18} /> : <Moon size={18} />}
       </button>
+
+      {isAuthenticated && (
+        <div className="fixed top-4 right-4 z-50">
+          <NotificationBell />
+        </div>
+      )}
 
       <AnimatePresence mode="wait">
         <Routes>
@@ -69,6 +77,7 @@ const App = () => {
           <Route path="/my-payslips" element={<ProtectedRoute><MyPayslipsPage /></ProtectedRoute>} />
           <Route path="/leaves" element={<ProtectedRoute hrOnly><LeavePage /></ProtectedRoute>} />
           <Route path="/my-leaves" element={<ProtectedRoute><MyLeavePage /></ProtectedRoute>} />
+          <Route path="/change-password" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
         </Routes>
       </AnimatePresence>
 

@@ -9,6 +9,7 @@ import {
   BarChart2,
   User,
   LogOut,
+  Lock,
 } from 'lucide-react';
 import { authStore } from '../store/authStore';
 
@@ -25,6 +26,7 @@ const Sidebar = () => {
     { icon: CreditCard, label: 'Payroll', path: '/payroll' },
     { icon: FileText, label: 'Payslips', path: '/payslips' },
     { icon: BarChart2, label: 'Reports', path: '/reports' },
+    { icon: Lock, label: 'Change Password', path: '/change-password' },
   ];
 
   const employeeNavItems = [
@@ -33,6 +35,7 @@ const Sidebar = () => {
     { icon: FileText, label: 'My Leaves', path: '/my-leaves' },
     { icon: CreditCard, label: 'My Payroll', path: '/my-payroll' },
     { icon: FileText, label: 'My Payslips', path: '/my-payslips' },
+    { icon: Lock, label: 'Change Password', path: '/change-password' },
   ];
 
   const navItems = role === 'hr' ? hrNavItems : employeeNavItems;

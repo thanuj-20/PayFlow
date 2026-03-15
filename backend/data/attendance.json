@@ -1,14 +1,1 @@
-[
-  { "id": "a1", "employeeId": "e1", "employeeName": "John Doe", "department": "Engineering", "date": "2026-03-13", "checkIn": "09:02", "checkOut": "20:15", "status": "present", "overtimeHours": 2 },
-  { "id": "a2", "employeeId": "e2", "employeeName": "Sarah Johnson", "department": "HR", "date": "2026-03-13", "checkIn": "08:50", "checkOut": "17:45", "status": "present", "overtimeHours": 0 },
-  { "id": "a3", "employeeId": "e3", "employeeName": "Michael Chen", "department": "Engineering", "date": "2026-03-13", "checkIn": "10:30", "checkOut": "18:30", "status": "late", "overtimeHours": 0 },
-  { "id": "a4", "employeeId": "e4", "employeeName": "Emily Rodriguez", "department": "Finance", "date": "2026-03-13", "checkIn": "09:05", "checkOut": "18:00", "status": "present", "overtimeHours": 0 },
-  { "id": "a5", "employeeId": "e5", "employeeName": "David Williams", "department": "Marketing", "date": "2026-03-13", "checkIn": null, "checkOut": null, "status": "absent", "overtimeHours": 0 },
-  { "id": "a6", "employeeId": "e6", "employeeName": "Lisa Anderson", "department": "Operations", "date": "2026-03-13", "checkIn": "08:55", "checkOut": "17:50", "status": "present", "overtimeHours": 0 },
-  { "id": "a7", "employeeId": "e7", "employeeName": "James Taylor", "department": "Engineering", "date": "2026-03-13", "checkIn": "09:10", "checkOut": "21:20", "status": "present", "overtimeHours": 3 },
-  { "id": "a8", "employeeId": "e8", "employeeName": "Amanda Martinez", "department": "Finance", "date": "2026-03-13", "checkIn": "11:15", "checkOut": "18:00", "status": "late", "overtimeHours": 0 },
-  { "id": "a9", "employeeId": "e9", "employeeName": "Robert Brown", "department": "Marketing", "date": "2026-03-13", "checkIn": "09:00", "checkOut": "18:10", "status": "present", "overtimeHours": 0 },
-  { "id": "a10", "employeeId": "e10", "employeeName": "Jennifer Lee", "department": "Operations", "date": "2026-03-13", "checkIn": "08:45", "checkOut": "17:30", "status": "present", "overtimeHours": 0 },
-  { "id": "a11", "employeeId": "e5", "employeeName": "David Williams", "department": "Marketing", "date": "2026-03-14", "checkIn": null, "checkOut": null, "status": "absent", "overtimeHours": 0 },
-  { "id": "a12", "employeeId": "e5", "employeeName": "David Williams", "department": "Marketing", "date": "2026-03-15", "checkIn": null, "checkOut": null, "status": "absent", "overtimeHours": 0 }
-]
+[]

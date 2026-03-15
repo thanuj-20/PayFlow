@@ -50,10 +50,11 @@ const EmployeesPage = () => {
   const handleCreateEmployee = async (data) => {
     try {
       await createEmployee(data);
-      toast.success('Employee created successfully');
+      toast.success('Employee created — welcome email sent!');
+      setModalOpen(false);
       fetchEmployees();
-    } catch {
-      toast.error('Failed to create employee');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to create employee');
     }
   };
 
@@ -61,10 +62,11 @@ const EmployeesPage = () => {
     try {
       await updateEmployee(editingEmployee.id, data);
       toast.success('Employee updated successfully');
-      fetchEmployees();
+      setModalOpen(false);
       setEditingEmployee(null);
-    } catch {
-      toast.error('Failed to update employee');
+      fetchEmployees();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to update employee');
     }
   };
 

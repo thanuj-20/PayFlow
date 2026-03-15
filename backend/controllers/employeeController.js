@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const { sendWelcomeEmail } = require('../utils/emailHelper');
 
 const getAllEmployees = async (req, res) => {
   try {
@@ -81,6 +82,11 @@ const createEmployee = async (req, res) => {
     };
 
     await db.collection('users').insertOne(newUser);
+
+    // Send welcome email (non-blocking — don't fail if email fails)
+    sendWelcomeEmail(newEmployee, plainPassword).catch((err) =>
+      console.error('Welcome email failed:', err.message)
+    );
 
     res.status(201).json({ employee: newEmployee, generatedPassword: plainPassword });
   } catch (error) {

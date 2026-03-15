@@ -1,5 +1,1 @@
-[
-  { "id": "l1", "employeeId": "e1", "employeeName": "John Doe", "department": "Engineering", "leaveType": "Sick Leave", "startDate": "2026-03-10", "endDate": "2026-03-10", "days": 1, "reason": "Fever", "status": "approved", "appliedAt": "2026-03-09T08:00:00.000Z" },
-  { "id": "l2", "employeeId": "e3", "employeeName": "Michael Chen", "department": "Engineering", "leaveType": "Casual Leave", "startDate": "2026-03-12", "endDate": "2026-03-12", "days": 1, "reason": "Personal work", "status": "approved", "appliedAt": "2026-03-11T08:00:00.000Z" },
-  { "id": "l3", "employeeId": "e5", "employeeName": "David Williams", "department": "Marketing", "leaveType": "Sick Leave", "startDate": "2026-03-13", "endDate": "2026-03-15", "days": 3, "reason": "Medical emergency", "status": "pending", "appliedAt": "2026-03-13T09:00:00.000Z" }
-]
+[]

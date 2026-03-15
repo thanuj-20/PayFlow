@@ -2,22 +2,28 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Download, AlertCircle } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-import { getMyPayslips } from '../services/api';
+import { getMyPayslips, downloadPayslip, getLeaveBalance } from '../services/api';
 import { authStore } from '../store/authStore';
+import toast from 'react-hot-toast';
 
 const MyPayslipsPage = () => {
   const [payslips, setPayslips] = useState([]);
+  const [leaveBalance, setLeaveBalance] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [downloading, setDownloading] = useState(null);
   const { employeeId } = authStore();
 
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res = await getMyPayslips(employeeId);
-        setPayslips(res.data);
+        const [psRes, lbRes] = await Promise.allSettled([
+          getMyPayslips(employeeId),
+          getLeaveBalance(),
+        ]);
+        if (psRes.status === 'fulfilled') setPayslips(psRes.value.data);
+        if (lbRes.status === 'fulfilled') setLeaveBalance(lbRes.value.data);
       } catch {
-        setError('Could not load payslips');
+        toast.error('Could not load payslips');
       } finally {
         setLoading(false);
       }
@@ -25,8 +31,25 @@ const MyPayslipsPage = () => {
     if (employeeId) fetch();
   }, [employeeId]);
 
-  const formatCurrency = (amount) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
+  const handleDownload = async (ps) => {
+    setDownloading(ps.id);
+    try {
+      const res = await downloadPayslip(ps.id);
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `payslip-${ps.month}-${ps.year}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('Payslip downloaded');
+    } catch {
+      toast.error('Download failed');
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  const fmt = (n) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
 
   return (
     <div className="app-layout">
@@ -39,13 +62,37 @@ const MyPayslipsPage = () => {
           </div>
         </div>
 
+        {/* Leave Balance */}
+        {leaveBalance.length > 0 && (
+          <motion.div className="card mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <h2 className="text-base font-semibold mb-4">Leave Balance — {new Date().getFullYear()}</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {leaveBalance.map(lb => (
+                <div key={lb.type} className="bg-[var(--bg-elevated)] rounded-xl p-4">
+                  <p className="text-xs text-[var(--text-secondary)] capitalize mb-1">{lb.type} Leave</p>
+                  <p className="text-2xl font-bold font-mono" style={{ color: 'var(--accent-secondary)' }}>
+                    {lb.remaining}
+                  </p>
+                  <p className="text-xs text-[var(--text-tertiary)]">of {lb.limit} days remaining</p>
+                  {lb.limit !== 'Unlimited' && (
+                    <div className="mt-2 h-1.5 rounded-full bg-[var(--border)] overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.max(0, (lb.remaining / lb.limit) * 100)}%`,
+                          background: lb.remaining > 3 ? 'var(--accent-secondary)' : 'var(--accent-danger)'
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         {loading ? (
           <div className="text-center py-12 text-[var(--text-secondary)]">Loading...</div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-3">
-            <AlertCircle className="w-12 h-12 text-red-500" />
-            <p className="text-[var(--text-secondary)]">{error}</p>
-          </div>
         ) : payslips.length === 0 ? (
           <div className="card text-center py-12">
             <FileText className="w-12 h-12 mx-auto mb-3 text-[var(--text-tertiary)]" />
@@ -68,34 +115,53 @@ const MyPayslipsPage = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">{ps.month} {ps.year}</h3>
-                      <p className="text-sm text-text-secondary">{ps.designation}</p>
+                      <p className="text-sm text-[var(--text-secondary)]">{ps.designation}</p>
                     </div>
                   </div>
                   <span className="badge badge-success">{ps.status}</span>
                 </div>
 
-                <div className="space-y-3 mb-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-text-secondary">Basic Salary</span>
-                    <span className="font-mono">{formatCurrency(ps.basicSalary)}</span>
+                <div className="space-y-2 mb-4 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-[var(--text-secondary)]">Basic</span>
+                    <span className="font-mono">{fmt(ps.basicSalary)}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-text-secondary">Bonus</span>
-                    <span className="font-mono text-green-500">+{formatCurrency(ps.bonus)}</span>
+                  <div className="flex justify-between">
+                    <span className="text-[var(--text-secondary)]">HRA</span>
+                    <span className="font-mono text-green-500">+{fmt(ps.hra)}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-text-secondary">Deductions</span>
-                    <span className="font-mono text-red-400">-{formatCurrency(ps.deductions)}</span>
+                  {ps.overtimePay > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-[var(--text-secondary)]">Overtime</span>
+                      <span className="font-mono text-green-500">+{fmt(ps.overtimePay)}</span>
+                    </div>
+                  )}
+                  {ps.lopDays > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-[var(--text-secondary)]">LOP ({ps.lopDays}d)</span>
+                      <span className="font-mono text-red-400">-{fmt(ps.lopDeduction)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-[var(--text-secondary)]">PF + Prof Tax</span>
+                    <span className="font-mono text-red-400">-{fmt(ps.totalDeductions)}</span>
                   </div>
                   <div className="h-px" style={{ background: 'var(--border)' }} />
-                  <div className="flex justify-between">
-                    <span className="font-semibold">Net Salary</span>
-                    <span className="font-mono font-bold text-lg" style={{ color: 'var(--accent-primary)' }}>{formatCurrency(ps.netSalary)}</span>
+                  <div className="flex justify-between font-semibold">
+                    <span>Net Salary</span>
+                    <span className="font-mono text-lg" style={{ color: 'var(--accent-primary)' }}>{fmt(ps.netSalary)}</span>
                   </div>
                 </div>
 
-                <button className="btn-secondary w-full flex items-center justify-center gap-2">
-                  <Download className="w-4 h-4" /> Download PDF
+                <button
+                  onClick={() => handleDownload(ps)}
+                  disabled={downloading === ps.id}
+                  className="btn-secondary w-full flex items-center justify-center gap-2"
+                >
+                  {downloading === ps.id
+                    ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    : <Download className="w-4 h-4" />}
+                  {downloading === ps.id ? 'Downloading...' : 'Download PDF'}
                 </button>
               </motion.div>
             ))}

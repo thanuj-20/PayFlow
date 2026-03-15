@@ -3,6 +3,7 @@ const payrollCalculationAgent = require('../agents/payrollCalculationAgent');
 const complianceValidationAgent = require('../agents/complianceValidationAgent');
 const anomalyDetectionAgent = require('../agents/anomalyDetectionAgent');
 const explanationAgent = require('../agents/explanationAgent');
+const { pushNotification } = require('./notificationsController');
 
 const getPayroll = async (req, res) => {
   try {
@@ -51,6 +52,14 @@ const initiatePayroll = async (req, res) => {
     const month = now.toLocaleString('default', { month: 'long' });
     const year = now.getFullYear();
 
+    // LOCK CHECK: prevent re-initiating if any approved records exist for this month
+    const approvedCount = await db.collection('payroll').countDocuments({ month, year, status: 'approved' });
+    if (approvedCount > 0) {
+      return res.status(400).json({
+        message: `Payroll for ${month} ${year} is already approved (${approvedCount} records). Cannot re-initiate a locked month.`
+      });
+    }
+
     const employees = await db.collection('employees').find({ status: 'active' }).toArray();
     const results = [];
 
@@ -71,8 +80,8 @@ const initiatePayroll = async (req, res) => {
       );
       const anomalies = anomalyDetectionAgent.detect(calculated, prevMonthPayroll);
 
-      // Agent 5: Generate explanation
-      const explanation = explanationAgent.generate(calculated, emp, prevMonthPayroll);
+      // Agent 5: Generate explanation (async — uses OpenAI if key set)
+      const explanation = await explanationAgent.generate(calculated, emp, prevMonthPayroll);
 
       const record = {
         id: 'p' + Date.now() + Math.random().toString(36).substr(2, 5),
@@ -136,6 +145,14 @@ const approvePayrollRecord = async (req, res) => {
     if (record) {
       await db.collection('payslips').deleteOne({ employeeId: record.employeeId, month: record.month, year: record.year });
       await db.collection('payslips').insertOne({ ...record, id: 'ps' + Date.now(), status: 'generated', generatedAt: new Date().toISOString() });
+      // Notify employee
+      const empUser = await db.collection('users').findOne({ employeeId: record.employeeId });
+      if (empUser) {
+        await pushNotification(db, empUser.id, 'Payslip Ready',
+          `Your payslip for ${record.month} ${record.year} has been approved. Net salary: ₹${record.netSalary?.toLocaleString('en-IN')}.`,
+          'success'
+        );
+      }
     }
 
     res.json({ message: 'Payroll record approved' });

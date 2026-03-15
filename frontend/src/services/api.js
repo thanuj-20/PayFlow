@@ -86,3 +86,18 @@ export const getMyPayslips = (employeeId) => api.get(`/api/payslips/${employeeId
 
 // Reports
 export const getReportsSummary = () => api.get('/api/reports/summary');
+export const exportReportsCSV = () => api.get('/api/reports/export-csv', { responseType: 'blob' });
+
+// Notifications
+export const getNotifications = () => api.get('/api/notifications');
+export const markAllRead = () => api.put('/api/notifications/read-all');
+export const markNotificationRead = (id) => api.put(`/api/notifications/${id}/read`);
+
+// Auth
+export const changePassword = (currentPassword, newPassword) => api.put('/api/auth/change-password', { currentPassword, newPassword });
+
+// Payslip PDF
+export const downloadPayslip = (id) => api.get(`/api/payslips/download/${id}`, { responseType: 'blob' });
+
+// Leave balance
+export const getLeaveBalance = () => api.get('/api/leaves/balance');

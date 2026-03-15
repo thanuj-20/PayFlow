@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { FileText, Download, AlertCircle, Play } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
-import { getAllPayslips, runPayroll } from '../services/api';
+import { getAllPayslips, runPayroll, downloadPayslip } from '../services/api';
 
 const ShimmerCard = () => (
   <motion.div className="card" style={{ background: 'linear-gradient(90deg, var(--bg-surface), var(--bg-elevated), var(--bg-surface))', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite', height: '280px' }} />
@@ -22,6 +22,25 @@ const PayslipsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const [downloading, setDownloading] = useState(null);
+
+  const handleDownload = async (ps) => {
+    setDownloading(ps.id);
+    try {
+      const res = await downloadPayslip(ps.id);
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `payslip-${ps.employeeName?.replace(/ /g, '-')}-${ps.month}-${ps.year}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('Payslip downloaded');
+    } catch {
+      toast.error('Download failed');
+    } finally {
+      setDownloading(null);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -132,9 +151,11 @@ const PayslipsPage = () => {
                   </div>
                 </div>
 
-                <button className="btn-secondary w-full flex items-center justify-center gap-2">
-                  <Download className="w-4 h-4" />
-                  Download PDF
+                <button onClick={() => handleDownload(payslip)} disabled={downloading === payslip.id} className="btn-secondary w-full flex items-center justify-center gap-2">
+                  {downloading === payslip.id
+                    ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    : <Download className="w-4 h-4" />}
+                  {downloading === payslip.id ? 'Downloading...' : 'Download PDF'}
                 </button>
               </motion.div>
             ))}
