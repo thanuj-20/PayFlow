@@ -4,6 +4,7 @@ const complianceValidationAgent = require('../agents/complianceValidationAgent')
 const anomalyDetectionAgent = require('../agents/anomalyDetectionAgent');
 const explanationAgent = require('../agents/explanationAgent');
 const { pushNotification } = require('./notificationsController');
+const { sendPayrollEmail } = require('../utils/emailHelper');
 
 const getPayroll = async (req, res) => {
   try {
@@ -44,15 +45,15 @@ const getPayrollSummary = async (req, res) => {
   }
 };
 
-// STEP 1: Initiate Payroll — runs all 5 agents, saves as pending_approval
 const initiatePayroll = async (req, res) => {
   try {
     const db = req.db;
     const now = new Date();
-    const month = now.toLocaleString('default', { month: 'long' });
-    const year = now.getFullYear();
+    // HR can pass month/year, defaults to current
+    const month = req.body.month || now.toLocaleString('default', { month: 'long' });
+    const year = parseInt(req.body.year) || now.getFullYear();
 
-    // LOCK CHECK: prevent re-initiating if any approved records exist for this month
+    // Lock check: prevent re-initiating an already approved month
     const approvedCount = await db.collection('payroll').countDocuments({ month, year, status: 'approved' });
     if (approvedCount > 0) {
       return res.status(400).json({
@@ -64,23 +65,14 @@ const initiatePayroll = async (req, res) => {
     const results = [];
 
     for (const emp of employees) {
-      // Agent 1: Aggregate data
       const aggregated = await dataAggregationAgent.aggregate(db, emp.id, month, year);
-
-      // Agent 2: Calculate salary
       const calculated = payrollCalculationAgent.calculate(emp, aggregated);
-
-      // Agent 3: Compliance validation
       const compliance = complianceValidationAgent.validate(calculated, emp);
-
-      // Agent 4: Anomaly detection (compare with last month)
       const prevMonthPayroll = await db.collection('payroll').findOne(
         { employeeId: emp.id, status: { $in: ['approved', 'processed'] } },
         { sort: { year: -1 } }
       );
       const anomalies = anomalyDetectionAgent.detect(calculated, prevMonthPayroll);
-
-      // Agent 5: Generate explanation (async — uses OpenAI if key set)
       const explanation = await explanationAgent.generate(calculated, emp, prevMonthPayroll);
 
       const record = {
@@ -112,7 +104,6 @@ const initiatePayroll = async (req, res) => {
       results.push(record);
     }
 
-    // Clear existing pending for this month and insert new
     await db.collection('payroll').deleteMany({ month, year, status: 'pending_approval' });
     if (results.length > 0) await db.collection('payroll').insertMany(results);
 
@@ -130,7 +121,24 @@ const initiatePayroll = async (req, res) => {
   }
 };
 
-// STEP 2: Approve a single payroll record
+const notifyAndEmail = async (db, record) => {
+  try {
+    const empUser = await db.collection('users').findOne({ employeeId: record.employeeId });
+    if (empUser) {
+      await pushNotification(db, empUser.id, 'Payslip Ready',
+        `Your payslip for ${record.month} ${record.year} has been approved. Net salary: Rs.${record.netSalary?.toLocaleString('en-IN')}.`,
+        'success'
+      );
+    }
+    const emp = await db.collection('employees').findOne({ id: record.employeeId });
+    if (emp) {
+      sendPayrollEmail(emp, record).catch(e => console.warn('Payroll email failed:', e.message));
+    }
+  } catch (e) {
+    console.warn('notifyAndEmail failed:', e.message);
+  }
+};
+
 const approvePayrollRecord = async (req, res) => {
   try {
     const db = req.db;
@@ -139,35 +147,23 @@ const approvePayrollRecord = async (req, res) => {
       { id },
       { $set: { status: 'approved', approvedAt: new Date().toISOString(), approvedBy: req.user.userId } }
     );
-
-    // Also create payslip
     const record = await db.collection('payroll').findOne({ id });
     if (record) {
       await db.collection('payslips').deleteOne({ employeeId: record.employeeId, month: record.month, year: record.year });
       await db.collection('payslips').insertOne({ ...record, id: 'ps' + Date.now(), status: 'generated', generatedAt: new Date().toISOString() });
-      // Notify employee
-      const empUser = await db.collection('users').findOne({ employeeId: record.employeeId });
-      if (empUser) {
-        await pushNotification(db, empUser.id, 'Payslip Ready',
-          `Your payslip for ${record.month} ${record.year} has been approved. Net salary: ₹${record.netSalary?.toLocaleString('en-IN')}.`,
-          'success'
-        );
-      }
+      await notifyAndEmail(db, record);
     }
-
     res.json({ message: 'Payroll record approved' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// STEP 2 (bulk): Approve all pending records for a month
 const approveAllPayroll = async (req, res) => {
   try {
     const db = req.db;
     const { month, year } = req.body;
     const now = new Date().toISOString();
-
     const records = await db.collection('payroll').find({ month, year: parseInt(year), status: 'pending_approval' }).toArray();
 
     for (const record of records) {
@@ -177,6 +173,7 @@ const approveAllPayroll = async (req, res) => {
       );
       await db.collection('payslips').deleteOne({ employeeId: record.employeeId, month, year: parseInt(year) });
       await db.collection('payslips').insertOne({ ...record, id: 'ps' + Date.now() + record.employeeId, status: 'generated', generatedAt: now });
+      await notifyAndEmail(db, record);
     }
 
     res.json({ message: `${records.length} payroll records approved`, month, year });
@@ -185,7 +182,6 @@ const approveAllPayroll = async (req, res) => {
   }
 };
 
-// Hold a payroll record
 const holdPayrollRecord = async (req, res) => {
   try {
     const db = req.db;
@@ -214,7 +210,6 @@ const getPayrollByEmployee = async (req, res) => {
   }
 };
 
-// Legacy runPayroll kept for compatibility
 const runPayroll = initiatePayroll;
 
 module.exports = { getPayroll, getPayrollSummary, initiatePayroll, runPayroll, approvePayrollRecord, approveAllPayroll, holdPayrollRecord, getPayrollByEmployee };

@@ -113,4 +113,29 @@ const getReportsSummary = async (req, res) => {
   }
 };
 
-module.exports = { getReportsSummary, exportCSV };
+const getAuditLog = async (req, res) => {
+  try {
+    const db = req.db;
+    const employees = await db.collection('employees').find({ 'modificationLog.0': { $exists: true } }).toArray();
+    const logs = [];
+    employees.forEach(emp => {
+      (emp.modificationLog || []).forEach(log => {
+        logs.push({
+          employeeId: emp.id,
+          employeeName: `${emp.firstName} ${emp.lastName}`,
+          department: emp.department,
+          changedAt: log.changedAt,
+          changedBy: log.changedBy,
+          reason: log.reason,
+        });
+      });
+    });
+    logs.sort((a, b) => new Date(b.changedAt) - new Date(a.changedAt));
+    res.json(logs);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+module.exports = { getReportsSummary, exportCSV, getAuditLog };
+

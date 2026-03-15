@@ -68,7 +68,7 @@ export const getPayroll = (filters = {}) => {
 export const getPayrollSummary = () => api.get('/api/payroll/summary');
 
 export const runPayroll = () => api.post('/api/payroll/run');
-export const initiatePayroll = () => api.post('/api/payroll/initiate');
+export const initiatePayroll = (month, year) => api.post('/api/payroll/initiate', { month, year });
 export const approveAllPayroll = (month, year) => api.post('/api/payroll/approve-all', { month, year });
 export const approvePayrollRecord = (id) => api.put(`/api/payroll/${id}/approve`);
 export const holdPayrollRecord = (id, reason) => api.put(`/api/payroll/${id}/hold`, { reason });
@@ -88,6 +88,7 @@ export const getMyPayslips = (employeeId) => api.get(`/api/payslips/${employeeId
 // Reports
 export const getReportsSummary = () => api.get('/api/reports/summary');
 export const exportReportsCSV = () => api.get('/api/reports/export-csv', { responseType: 'blob' });
+export const getAuditLog = () => api.get('/api/reports/audit-log');
 
 // Notifications
 export const getNotifications = () => api.get('/api/notifications');

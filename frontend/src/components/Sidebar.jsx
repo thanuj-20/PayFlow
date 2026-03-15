@@ -1,15 +1,8 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  LayoutDashboard,
-  Users,
-  CalendarCheck,
-  CreditCard,
-  FileText,
-  BarChart2,
-  User,
-  LogOut,
-  Lock,
+  LayoutDashboard, Users, CalendarCheck, CreditCard,
+  FileText, BarChart2, User, LogOut, Lock,
 } from 'lucide-react';
 import { authStore } from '../store/authStore';
 
@@ -46,8 +39,9 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="fixed left-0 top-0 h-full w-60 bg-[var(--bg-surface)] border-r border-[var(--border)] flex flex-col">
-      <div className="p-6">
+    <div className="fixed left-0 top-0 h-full w-60 bg-[var(--bg-surface)] border-r border-[var(--border)] flex flex-col z-40">
+      {/* Logo */}
+      <div className="p-6 flex-shrink-0">
         <div className="logo text-2xl font-bold">
           <span className="text-[var(--text-primary)]">Pay</span>
           <span className="text-[var(--accent-primary)]">Flow</span>
@@ -57,14 +51,15 @@ const Sidebar = () => {
         </div>
       </div>
 
-      <nav className="flex-1 px-4">
+      {/* Nav — scrollable if needed */}
+      <nav className="flex-1 px-4 overflow-y-auto min-h-0">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <motion.button
               key={item.path}
               onClick={() => navigate(item.path)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors mb-1 ${
                 isActive
                   ? 'bg-[var(--glow-violet)] border-l-4 border-[var(--accent-primary)] text-[var(--accent-primary)]'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'
@@ -73,21 +68,22 @@ const Sidebar = () => {
               whileTap={{ scale: 0.98 }}
             >
               <item.icon size={20} className={isActive ? 'text-[var(--accent-primary)]' : ''} />
-              {item.label}
+              <span className="text-sm">{item.label}</span>
             </motion.button>
           );
         })}
       </nav>
 
-      <div className="p-4">
+      {/* Logout — always visible at bottom */}
+      <div className="p-4 flex-shrink-0 border-t border-[var(--border)]">
         <motion.button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-secondary)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
           <LogOut size={20} />
-          Logout
+          <span className="text-sm">Logout</span>
         </motion.button>
       </div>
     </div>

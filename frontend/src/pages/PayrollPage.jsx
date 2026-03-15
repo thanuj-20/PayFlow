@@ -162,7 +162,7 @@ const PayrollPage = () => {
   const handleInitiate = async () => {
     setInitiating(true);
     try {
-      const res = await initiatePayroll();
+      const res = await initiatePayroll(selectedMonth, selectedYear);
       toast.success(`Payroll initiated — ${res.data.processed} records, ${res.data.flagged} flagged`);
       setSelectedMonth(res.data.month);
       setSelectedYear(res.data.year);
