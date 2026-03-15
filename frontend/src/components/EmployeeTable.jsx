@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, UserX } from 'lucide-react';
 
 const EmployeeTable = ({ employees, onEdit, onDeactivate, deactivatingId }) => {
   const container = {
@@ -76,13 +76,15 @@ const EmployeeTable = ({ employees, onEdit, onDeactivate, deactivatingId }) => {
                   </motion.button>
                   <motion.button
                     onClick={() => onDeactivate(employee)}
-                    className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors"
+                    disabled={employee.status === 'inactive' || deactivatingId === employee.id}
+                    className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
+                    title={employee.status === 'inactive' ? 'Already deactivated' : 'Deactivate employee'}
                   >
                     {deactivatingId === employee.id
                       ? <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
-                      : <Trash2 size={16} />}
+                      : <UserX size={16} />}
                   </motion.button>
                 </div>
               </td>

@@ -72,7 +72,7 @@ const EmployeesPage = () => {
 
   const handleDeactivateEmployee = async (employee) => {
     if (deactivatingId) return;
-    if (window.confirm(`Deactivate ${employee.firstName} ${employee.lastName}?`)) {
+    if (window.confirm(`Deactivate ${employee.firstName} ${employee.lastName}? Their account will be disabled but records will be kept.`)) {
       setDeactivatingId(employee.id);
       try {
         await deactivateEmployee(employee.id);
