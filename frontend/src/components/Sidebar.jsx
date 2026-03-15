@@ -40,7 +40,7 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="fixed left-0 top-0 h-full w-60 bg-[var(--bg-surface)] border-r border-[var(--border)] flex flex-col z-40">
+    <div className="fixed left-0 top-0 h-screen w-60 bg-[var(--bg-surface)] border-r border-[var(--border)] flex flex-col z-40" style={{maxHeight: '100vh', overflow: 'hidden'}}>
       {/* Logo */}
       <div className="p-6 flex-shrink-0">
         <div className="logo text-2xl font-bold">
@@ -53,7 +53,7 @@ const Sidebar = () => {
       </div>
 
       {/* Nav — scrollable if needed */}
-      <nav className="flex-1 px-4 overflow-y-auto min-h-0">
+      <nav className="flex-1 px-4 overflow-y-auto min-h-0" style={{overflowY: 'auto'}}>
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
