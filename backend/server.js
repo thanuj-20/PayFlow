@@ -42,14 +42,16 @@ async function startServer() {
   }
 
   console.log('Connecting to MongoDB...');
+  console.log('MONGO_URI set:', !!process.env.MONGO_URI);
 
   const client = new MongoClient(process.env.MONGO_URI, {
     serverSelectionTimeoutMS: 15000,
   });
 
   await client.connect();
+  console.log('MongoDB client connected');
   const db = client.db('payflow');
-  console.log('Connected to MongoDB');
+  console.log('Connected to MongoDB — db:', db.databaseName);
 
   app.use((req, res, next) => { req.db = db; next(); });
 
