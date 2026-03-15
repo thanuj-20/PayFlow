@@ -32,7 +32,10 @@ async function startServer() {
     process.exit(1);
   }
 
-  const client = new MongoClient(process.env.MONGO_URI);
+  const client = new MongoClient(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 10000,
+    tls: true,
+  });
 
   try {
     await client.connect();
