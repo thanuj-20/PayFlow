@@ -23,9 +23,24 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Health check — Render pings this to verify the service is up
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
 async function startServer() {
+  if (!process.env.MONGO_URI) {
+    console.error('ERROR: MONGO_URI environment variable is not set');
+    process.exit(1);
+  }
+
   const client = new MongoClient(process.env.MONGO_URI);
-  await client.connect();
+
+  try {
+    await client.connect();
+  } catch (err) {
+    console.error('ERROR: Failed to connect to MongoDB:', err.message);
+    process.exit(1);
+  }
+
   const db = client.db('payflow');
   console.log('Connected to MongoDB');
 
