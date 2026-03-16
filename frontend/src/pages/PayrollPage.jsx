@@ -223,12 +223,12 @@ const PayrollPage = () => {
     <div className="app-layout">
       <Sidebar />
       <main className="main-content">
-        <div className="page-header">
+        <div className="page-header flex-wrap gap-3">
           <div>
             <h1 className="page-title">Payroll Management</h1>
             <p className="page-subtitle">Initiate, validate and approve employee payroll</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className={selectClass}>
               {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
@@ -271,20 +271,17 @@ const PayrollPage = () => {
         {/* Workflow Status */}
         {records.length > 0 && (
           <motion.div className="card mb-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <div className="flex items-center gap-8">
+            <div className="flex flex-wrap items-center gap-6">
               {[
                 { label: 'Initiated', count: records.length, color: 'text-[var(--accent-primary)]' },
                 { label: 'Pending Review', count: pending.length, color: 'text-yellow-400' },
                 { label: 'Flagged', count: flagged.length, color: 'text-red-400' },
                 { label: 'Approved', count: records.filter(r => r.status === 'approved').length, color: 'text-green-400' },
                 { label: 'Held', count: records.filter(r => r.status === 'held').length, color: 'text-orange-400' },
-              ].map(({ label, count, color }, i, arr) => (
-                <div key={label} className="flex items-center gap-4">
-                  <div className="text-center">
-                    <p className={`text-2xl font-bold font-mono ${color}`}>{count}</p>
-                    <p className="text-xs text-[var(--text-secondary)]">{label}</p>
-                  </div>
-                  {i < arr.length - 1 && <div className="w-8 h-px bg-[var(--border)]" />}
+              ].map(({ label, count, color }) => (
+                <div key={label} className="text-center">
+                  <p className={`text-2xl font-bold font-mono ${color}`}>{count}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{label}</p>
                 </div>
               ))}
             </div>

@@ -76,18 +76,20 @@ const getReportsSummary = async (req, res) => {
     const payrollSummary = {
       month: now.toLocaleString('default', { month: 'long' }),
       year: now.getFullYear(),
-      totalGross: payroll.reduce((sum, p) => sum + (p.basicSalary || 0), 0),
-      totalBonus: payroll.reduce((sum, p) => sum + (p.bonus || 0), 0),
-      totalDeductions: payroll.reduce((sum, p) => sum + (p.deductions || 0), 0),
+      totalGross: payroll.reduce((sum, p) => sum + (p.grossSalary || 0), 0),
+      totalBonus: payroll.reduce((sum, p) => sum + (p.overtimePay || 0), 0),
+      totalDeductions: payroll.reduce((sum, p) => sum + (p.totalDeductions || 0), 0),
       totalNet: payroll.reduce((sum, p) => sum + (p.netSalary || 0), 0)
     };
 
+    const today = now.toISOString().split('T')[0];
+    const todayAttendance = attendance.filter(a => a.date === today);
     const attendanceSummary = {
-      date: now.toISOString().split('T')[0],
-      present: attendance.filter(a => a.status === 'present').length,
-      late: attendance.filter(a => a.status === 'late').length,
-      absent: attendance.filter(a => a.status === 'absent').length,
-      total: attendance.length
+      date: today,
+      present: todayAttendance.filter(a => a.status === 'present').length,
+      late: todayAttendance.filter(a => a.status === 'late').length,
+      absent: todayAttendance.filter(a => a.status === 'absent').length,
+      total: todayAttendance.length
     };
 
     const allEmployeeRecords = employees.map(emp => {
@@ -99,8 +101,8 @@ const getReportsSummary = async (req, res) => {
         department: emp.department,
         designation: emp.designation,
         basicSalary: emp.basicSalary,
-        bonus: payrollData?.bonus || 0,
-        deductions: payrollData?.deductions || 0,
+        bonus: payrollData?.overtimePay || 0,
+        deductions: payrollData?.totalDeductions || 0,
         netSalary: payrollData?.netSalary || 0,
         status: emp.status,
         joiningDate: emp.joiningDate

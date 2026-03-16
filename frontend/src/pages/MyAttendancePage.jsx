@@ -11,9 +11,16 @@ const MyAttendancePage = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [now, setNow] = useState(new Date());
   const { employeeId } = authStore();
 
-  const today = new Date().toISOString().split('T')[0];
+  // Live clock
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const today = now.toISOString().split('T')[0];
   const todayRecord = records.find(r => r.date === today);
 
   const fetchRecords = useCallback(async () => {
@@ -67,8 +74,7 @@ const MyAttendancePage = () => {
     return 'badge-danger';
   };
 
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
@@ -108,19 +114,14 @@ const MyAttendancePage = () => {
 
             <div className="flex gap-3">
               {!todayRecord && (
-                <button
-                  onClick={handleCheckIn}
-                  disabled={actionLoading}
-                  className="btn-primary flex items-center gap-2"
-                >
+                <button onClick={handleCheckIn} disabled={actionLoading} className="btn-primary flex items-center gap-2">
                   <LogIn size={16} />
                   {actionLoading ? 'Checking in...' : 'Check In'}
                 </button>
               )}
               {todayRecord && !todayRecord.checkOut && (
                 <button
-                  onClick={handleCheckOut}
-                  disabled={actionLoading}
+                  onClick={handleCheckOut} disabled={actionLoading}
                   className="btn-primary flex items-center gap-2"
                   style={{ background: 'var(--accent-warning)' }}
                 >
@@ -130,8 +131,7 @@ const MyAttendancePage = () => {
               )}
               {todayRecord?.checkOut && (
                 <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--accent-secondary)' }}>
-                  <UserCheck size={16} />
-                  Completed for today
+                  <UserCheck size={16} /> Completed for today
                 </div>
               )}
             </div>
@@ -147,7 +147,7 @@ const MyAttendancePage = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {[
                 { label: 'Present', value: present, icon: UserCheck, cls: 'accent-secondary' },
                 { label: 'Late', value: late, icon: Clock, cls: 'accent-warning' },

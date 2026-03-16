@@ -12,7 +12,7 @@ const MyPayrollPage = () => {
   const { employeeId } = authStore();
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       try {
         const res = await getMyPayroll(employeeId);
         setRecords(res.data);
@@ -22,11 +22,11 @@ const MyPayrollPage = () => {
         setLoading(false);
       }
     };
-    if (employeeId) fetch();
+    if (employeeId) fetchData();
   }, [employeeId]);
 
-  const formatCurrency = (amount) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
+  const fmt = (amount) =>
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount || 0);
 
   const latest = records[records.length - 1];
 
@@ -52,11 +52,11 @@ const MyPayrollPage = () => {
           <div className="card text-center py-12 text-[var(--text-secondary)]">No payroll records found yet</div>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {[
-                { label: 'Basic Salary', value: formatCurrency(latest.basicSalary), icon: DollarSign, cls: 'accent-primary' },
-                { label: 'Bonus', value: formatCurrency(latest.bonus), icon: TrendingUp, cls: 'accent-secondary' },
-                { label: 'Deductions', value: formatCurrency(latest.deductions), icon: TrendingDown, cls: 'accent-warning' },
+                { label: 'Basic Salary', value: fmt(latest.basicSalary), icon: DollarSign, cls: 'accent-primary' },
+                { label: 'Overtime Pay', value: fmt(latest.overtimePay), icon: TrendingUp, cls: 'accent-secondary' },
+                { label: 'Total Deductions', value: fmt(latest.totalDeductions), icon: TrendingDown, cls: 'accent-warning' },
               ].map(({ label, value, icon: Icon, cls }, i) => (
                 <motion.div key={label} className={`card ${cls}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
                   <div className="flex items-center justify-between">
@@ -77,8 +77,10 @@ const MyPayrollPage = () => {
                   <thead>
                     <tr>
                       <th>Period</th>
-                      <th>Basic Salary</th>
-                      <th>Bonus</th>
+                      <th>Basic</th>
+                      <th>HRA</th>
+                      <th>Overtime</th>
+                      <th>LOP</th>
                       <th>Deductions</th>
                       <th>Net Salary</th>
                       <th>Status</th>
@@ -88,10 +90,12 @@ const MyPayrollPage = () => {
                     {records.map(r => (
                       <tr key={r.id}>
                         <td className="font-medium">{r.month} {r.year}</td>
-                        <td className="font-mono">{formatCurrency(r.basicSalary)}</td>
-                        <td className="font-mono text-green-500">+{formatCurrency(r.bonus)}</td>
-                        <td className="font-mono text-red-400">-{formatCurrency(r.deductions)}</td>
-                        <td className="font-mono font-bold" style={{ color: 'var(--accent-secondary)' }}>{formatCurrency(r.netSalary)}</td>
+                        <td className="font-mono">{fmt(r.basicSalary)}</td>
+                        <td className="font-mono text-green-500">+{fmt(r.hra)}</td>
+                        <td className="font-mono text-green-500">{r.overtimePay > 0 ? `+${fmt(r.overtimePay)}` : '—'}</td>
+                        <td className="font-mono text-red-400">{r.lopDays > 0 ? `-${fmt(r.lopDeduction)}` : '—'}</td>
+                        <td className="font-mono text-red-400">-{fmt(r.totalDeductions)}</td>
+                        <td className="font-mono font-bold" style={{ color: 'var(--accent-secondary)' }}>{fmt(r.netSalary)}</td>
                         <td><span className="badge badge-success">{r.status}</span></td>
                       </tr>
                     ))}

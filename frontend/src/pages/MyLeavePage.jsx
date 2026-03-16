@@ -75,7 +75,7 @@ const MyLeavePage = () => {
     <div className="app-layout">
       <Sidebar />
       <main className="main-content">
-        <div className="page-header">
+        <div className="page-header flex-wrap gap-3">
           <div>
             <h1 className="page-title">My Leaves</h1>
             <p className="page-subtitle">Apply for leave and track your requests</p>

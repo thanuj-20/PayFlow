@@ -77,7 +77,7 @@ const AttendancePage = () => {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {[
             { label: 'Present Today', value: summary?.present ?? 0, icon: UserCheck, cls: 'accent-secondary' },
             { label: 'Late Today', value: summary?.late ?? 0, icon: Clock, cls: 'accent-warning' },

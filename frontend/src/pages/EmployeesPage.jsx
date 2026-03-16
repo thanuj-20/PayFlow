@@ -119,7 +119,7 @@ const EmployeesPage = () => {
           exit={{ opacity: 0, y: -24 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
             <div>
               <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Employees</h1>
               <p className="text-[var(--text-secondary)]">Manage your employee database</p>

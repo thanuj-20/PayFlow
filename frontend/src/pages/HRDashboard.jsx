@@ -179,7 +179,7 @@ const HRDashboard = () => {
           </div>
 
           {/* Stat Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
             <StatCard icon={Users} label="Total Employees" value={totalEmployees} color="primary" />
             <StatCard icon={UserCheck} label="Active Employees" value={activeEmployees} color="secondary" />
             <StatCard icon={IndianRupee} label="Monthly Payroll" value={`₹${totalPayroll.toLocaleString('en-IN')}`} color="secondary" />

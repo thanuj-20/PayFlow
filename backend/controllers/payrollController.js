@@ -28,7 +28,7 @@ const getPayrollSummary = async (req, res) => {
     const payroll = await db.collection('payroll').find({}).toArray();
     const now = new Date();
     const summary = {
-      totalGross: payroll.reduce((sum, p) => sum + (p.grossSalary || p.basicSalary || 0), 0),
+      totalGross: payroll.reduce((sum, p) => sum + (p.grossSalary || 0), 0),
       totalBonus: payroll.reduce((sum, p) => sum + (p.overtimePay || 0), 0),
       totalDeductions: payroll.reduce((sum, p) => sum + (p.totalDeductions || 0), 0),
       totalNet: payroll.reduce((sum, p) => sum + (p.netSalary || 0), 0),

@@ -1,3 +1,5 @@
+const { ObjectId } = require('mongodb');
+
 const getNotifications = async (req, res) => {
   try {
     const db = req.db;
@@ -6,7 +8,6 @@ const getNotifications = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(20)
       .toArray();
-    // Ensure every doc has an `id` field the frontend can use
     const mapped = notifications.map(n => ({
       ...n,
       id: n.id || n._id.toString(),
@@ -33,10 +34,22 @@ const markAllRead = async (req, res) => {
 const markRead = async (req, res) => {
   try {
     const db = req.db;
-    await db.collection('notifications').updateOne(
-      { id: req.params.id, userId: req.user.userId },
+    const { id } = req.params;
+    // Try custom id field first, fall back to _id
+    let result = await db.collection('notifications').updateOne(
+      { id, userId: req.user.userId },
       { $set: { read: true } }
     );
+    if (result.matchedCount === 0) {
+      try {
+        await db.collection('notifications').updateOne(
+          { _id: new ObjectId(id), userId: req.user.userId },
+          { $set: { read: true } }
+        );
+      } catch {
+        // id is not a valid ObjectId — ignore
+      }
+    }
     res.json({ message: 'Notification marked as read' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -56,7 +69,6 @@ const pushNotification = async (db, userId, title, message, type = 'info') => {
       createdAt: new Date().toISOString(),
     });
   } catch (e) {
-    // Non-critical — don't throw
     console.warn('Failed to push notification:', e.message);
   }
 };

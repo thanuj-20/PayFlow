@@ -27,11 +27,13 @@ const LeaveCalendar = ({ leaves = [] }) => {
   leaves.forEach(l => {
     const start = new Date(l.startDate);
     const end = new Date(l.endDate);
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      if (d.getMonth() === month && d.getFullYear() === year) {
-        const key = d.getDate();
-        leaveMap[key] = { type: l.leaveType, status: l.status };
+    // Use a new Date each iteration to avoid mutation
+    const cur = new Date(start);
+    while (cur <= end) {
+      if (cur.getMonth() === month && cur.getFullYear() === year) {
+        leaveMap[cur.getDate()] = { type: l.leaveType, status: l.status };
       }
+      cur.setDate(cur.getDate() + 1);
     }
   });
 
