@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Download, AlertCircle } from 'lucide-react';
+import { FileText, Download } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-import { getMyPayslips, downloadPayslip, getLeaveBalance } from '../services/api';
+import { getMyPayslips, downloadPayslip } from '../services/api';
 import { authStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 
 const MyPayslipsPage = () => {
   const [payslips, setPayslips] = useState([]);
-  const [leaveBalance, setLeaveBalance] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(null);
   const { employeeId } = authStore();
@@ -16,12 +15,8 @@ const MyPayslipsPage = () => {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const [psRes, lbRes] = await Promise.allSettled([
-          getMyPayslips(employeeId),
-          getLeaveBalance(),
-        ]);
-        if (psRes.status === 'fulfilled') setPayslips(psRes.value.data);
-        if (lbRes.status === 'fulfilled') setLeaveBalance(lbRes.value.data);
+        const res = await getMyPayslips(employeeId);
+        setPayslips(res.data);
       } catch {
         toast.error('Could not load payslips');
       } finally {
@@ -61,35 +56,6 @@ const MyPayslipsPage = () => {
             <p className="page-subtitle">Your monthly payslip history</p>
           </div>
         </div>
-
-        {/* Leave Balance */}
-        {leaveBalance.length > 0 && (
-          <motion.div className="card mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <h2 className="text-base font-semibold mb-4">Leave Balance — {new Date().getFullYear()}</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {leaveBalance.map(lb => (
-                <div key={lb.type} className="bg-[var(--bg-elevated)] rounded-xl p-4">
-                  <p className="text-xs text-[var(--text-secondary)] capitalize mb-1">{lb.type} Leave</p>
-                  <p className="text-2xl font-bold font-mono" style={{ color: 'var(--accent-secondary)' }}>
-                    {lb.remaining}
-                  </p>
-                  <p className="text-xs text-[var(--text-tertiary)]">of {lb.limit} days remaining</p>
-                  {lb.limit !== 'Unlimited' && (
-                    <div className="mt-2 h-1.5 rounded-full bg-[var(--border)] overflow-hidden">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${Math.max(0, (lb.remaining / lb.limit) * 100)}%`,
-                          background: lb.remaining > 3 ? 'var(--accent-secondary)' : 'var(--accent-danger)'
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
 
         {loading ? (
           <div className="text-center py-12 text-[var(--text-secondary)]">Loading...</div>
