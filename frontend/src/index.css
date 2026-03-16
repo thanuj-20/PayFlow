@@ -105,6 +105,15 @@ body::after {
   padding: 2rem;
   position: relative;
   z-index: 1;
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .main-content {
+    margin-left: 0 !important;
+    padding: 1rem;
+    padding-top: 4rem; /* space for hamburger */
+  }
 }
 
 /* Page header */
@@ -229,7 +238,7 @@ body::after {
 
 @media print {
   .sidebar, nav, button, .notification-bell { display: none !important; }
-  .main-content { margin-left: 0 !important; }
+  .main-content { margin-left: 0 !important; padding-top: 1rem !important; }
   body { background: white !important; color: black !important; }
   .card { border: 1px solid #ddd !important; background: white !important; }
 }

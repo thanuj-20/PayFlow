@@ -108,24 +108,19 @@ const updateEmployee = async (req, res) => {
       return res.status(404).json({ error: 'Employee not found' });
     }
 
-    const updateData = {};
-    if (firstName) updateData.firstName = firstName;
-    if (lastName) updateData.lastName = lastName;
-    if (department) updateData.department = department;
-    if (designation) updateData.designation = designation;
-    if (basicSalary) updateData.basicSalary = parseInt(basicSalary);
-
-    const modificationEntry = {
-      changedAt: new Date(),
-      changedBy: req.user.userId,
-      reason: modificationReason
-    };
-
-    updateData.$push = { modificationLog: modificationEntry };
+    const setFields = {};
+    if (firstName) setFields.firstName = firstName;
+    if (lastName) setFields.lastName = lastName;
+    if (department) setFields.department = department;
+    if (designation) setFields.designation = designation;
+    if (basicSalary) setFields.basicSalary = parseInt(basicSalary);
 
     await db.collection('employees').updateOne(
       { id: req.params.id },
-      updateData
+      {
+        $set: setFields,
+        $push: { modificationLog: { changedAt: new Date(), changedBy: req.user.userId, reason: modificationReason } }
+      }
     );
 
     const updatedEmployee = await db.collection('employees').findOne({ id: req.params.id });

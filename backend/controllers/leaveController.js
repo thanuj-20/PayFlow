@@ -86,6 +86,17 @@ const applyLeave = async (req, res) => {
     };
 
     await db.collection('leaves').insertOne(leave);
+
+    // Notify HR users about the new leave request
+    const hrUsers = await db.collection('users').find({ role: 'hr' }).toArray();
+    for (const hrUser of hrUsers) {
+      await pushNotification(db, hrUser.id,
+        'New Leave Request',
+        `${leave.employeeName} applied for ${leaveType} leave (${startDate} to ${endDate}, ${days} day${days > 1 ? 's' : ''}).`,
+        'info'
+      );
+    }
+
     res.status(201).json(leave);
   } catch (error) {
     res.status(500).json({ message: error.message });

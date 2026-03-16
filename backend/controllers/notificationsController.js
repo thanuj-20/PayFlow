@@ -1,10 +1,17 @@
 const getNotifications = async (req, res) => {
   try {
     const db = req.db;
-    const query = { userId: req.user.userId };
     const notifications = await db.collection('notifications')
-      .find(query).sort({ createdAt: -1 }).limit(20).toArray();
-    res.json(notifications);
+      .find({ userId: req.user.userId })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .toArray();
+    // Ensure every doc has an `id` field the frontend can use
+    const mapped = notifications.map(n => ({
+      ...n,
+      id: n.id || n._id.toString(),
+    }));
+    res.json(mapped);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

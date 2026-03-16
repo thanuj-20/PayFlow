@@ -166,7 +166,7 @@ const HRDashboard = () => {
   return (
     <div className="min-h-screen bg-[var(--bg-base)]">
       <Sidebar />
-      <div className="ml-60 page-content">
+      <div className="md:ml-60 page-content pt-16 md:pt-0">
         <motion.div
           className="p-8"
           initial={{ opacity: 0, y: 24 }}

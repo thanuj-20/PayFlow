@@ -94,14 +94,14 @@ const EmployeeProfilePage = () => {
   if (loading) return (
     <div className="min-h-screen bg-[var(--bg-base)]">
       <Sidebar />
-      <div className="ml-60 page-content p-8 text-center py-12 text-[var(--text-secondary)]">Loading profile...</div>
+      <div className="md:ml-60 page-content pt-16 md:pt-0 p-8 text-center py-12 text-[var(--text-secondary)]">Loading profile...</div>
     </div>
   );
 
   if (!employee) return (
     <div className="min-h-screen bg-[var(--bg-base)]">
       <Sidebar />
-      <div className="ml-60 page-content p-8 text-center py-12 text-[var(--text-secondary)]">Profile not found</div>
+      <div className="md:ml-60 page-content pt-16 md:pt-0 p-8 text-center py-12 text-[var(--text-secondary)]">Profile not found</div>
     </div>
   );
 
@@ -114,7 +114,7 @@ const EmployeeProfilePage = () => {
   return (
     <div className="min-h-screen bg-[var(--bg-base)]">
       <Sidebar />
-      <div className="ml-60 page-content">
+      <div className="md:ml-60 page-content pt-16 md:pt-0">
         <motion.div
           className="p-8"
           initial={{ opacity: 0, y: 24 }}

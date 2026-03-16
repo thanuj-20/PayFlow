@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Menu } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { authStore } from './store/authStore';
 import { themeStore } from './store/themeStore';
@@ -35,6 +35,7 @@ const App = () => {
   const { isAuthenticated, role, token, clearAuth } = authStore();
   const { isDark, toggleTheme } = themeStore();
   const [warnedExpiry, setWarnedExpiry] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.className = isDark ? 'dark' : 'light';
@@ -65,6 +66,16 @@ const App = () => {
 
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      {/* Hamburger — mobile only */}
+      {isAuthenticated && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="fixed top-4 left-4 z-50 md:hidden p-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+        >
+          <Menu size={20} />
+        </button>
+      )}
+
       {/* Theme toggle */}
       <button
         onClick={toggleTheme}
