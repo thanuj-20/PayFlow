@@ -12,14 +12,13 @@ const MyLeavePage = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const today = new Date().toISOString().split('T')[0];
-  const [form, setForm] = useState({ leaveType: 'casual', startDate: today, days: 1, reason: '' });
+  const today = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+  const [form, setForm] = useState({ leaveType: 'casual', startDate: today, endDate: today, reason: '' });
 
-  const getEndDate = (start, days) => {
-    if (!start || !days) return '';
-    const d = new Date(start);
-    d.setDate(d.getDate() + Number(days) - 1);
-    return d.toISOString().split('T')[0];
+  const calcDays = (start, end) => {
+    if (!start || !end) return 0;
+    const diff = new Date(end) - new Date(start);
+    return diff < 0 ? 0 : Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
   };
 
   const LEAVE_LIMITS = { casual: 2, sick: 3, unpaid: 3 };
@@ -56,10 +55,10 @@ const MyLeavePage = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await applyLeave({ ...form, endDate: getEndDate(form.startDate, form.days) });
+      await applyLeave({ ...form, days: calcDays(form.startDate, form.endDate) });
       toast.success('Leave application submitted');
       setShowForm(false);
-      setForm({ leaveType: 'casual', startDate: today, days: 1, reason: '' });
+      setForm({ leaveType: 'casual', startDate: today, endDate: today, reason: '' });
       fetchAll();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to apply for leave');
@@ -70,6 +69,31 @@ const MyLeavePage = () => {
 
   const statusBadge = (s) => s === 'approved' ? 'badge-success' : s === 'rejected' ? 'badge-danger' : 'badge-warning';
   const inputClass = "w-full px-4 py-3 bg-[var(--bg-base)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:border-[var(--accent-primary)] transition-all outline-none";
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const todayObj = new Date(today);
+  const [calView, setCalView] = useState(new Date(todayObj.getFullYear(), todayObj.getMonth(), 1));
+
+  const isBefore = (a, b) => new Date(a) < new Date(b);
+  const inRange = (d) => {
+    if (!form.startDate || !form.endDate) return false;
+    return new Date(d) > new Date(form.startDate) && new Date(d) < new Date(form.endDate);
+  };
+  const toDateStr = (y, m, d) => `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+
+  const handleDayClick = (dateStr) => {
+    if (isBefore(dateStr, today)) return;
+    if (!form.startDate || (form.startDate && form.endDate)) {
+      setForm(p => ({ ...p, startDate: dateStr, endDate: '' }));
+    } else {
+      if (isBefore(dateStr, form.startDate)) {
+        setForm(p => ({ ...p, startDate: dateStr, endDate: '' }));
+      } else {
+        setForm(p => ({ ...p, endDate: dateStr }));
+      }
+    }
+  };
 
   return (
     <div className="app-layout">
@@ -182,7 +206,7 @@ const MyLeavePage = () => {
           {showForm && (
             <motion.div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <motion.div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded-2xl p-8 w-full max-w-md"
+              <motion.div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-lg"
                 initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold">Apply for Leave</h2>
@@ -199,29 +223,56 @@ const MyLeavePage = () => {
                       <option value="unpaid">Paid Leave</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Number of Days</label>
-                    <input type="number" min={1} max={LEAVE_LIMITS[form.leaveType]} value={form.days}
-                      onChange={e => setForm(p => ({ ...p, days: Math.min(Number(e.target.value), LEAVE_LIMITS[p.leaveType]) }))
-                      } className={inputClass} required />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">From</label>
-                      <input type="date" min={today} value={form.startDate} onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))} className={inputClass} required />
+
+                  {/* Inline Calendar */}
+                  <div className="rounded-xl border border-[var(--border)] overflow-hidden">
+                    {/* Cal header */}
+                    <div className="flex items-center justify-between px-4 py-2 bg-[var(--bg-base)]">
+                      <button type="button" onClick={() => setCalView(v => new Date(v.getFullYear(), v.getMonth()-1, 1))}
+                        className="p-1 rounded hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)]">&lt;</button>
+                      <span className="text-sm font-semibold">{MONTHS[calView.getMonth()]} {calView.getFullYear()}</span>
+                      <button type="button" onClick={() => setCalView(v => new Date(v.getFullYear(), v.getMonth()+1, 1))}
+                        className="p-1 rounded hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)]">&gt;</button>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">To</label>
-                      <input type="date" value={getEndDate(form.startDate, form.days)} className={`${inputClass} opacity-60 cursor-not-allowed`} readOnly />
+                    {/* Day headers */}
+                    <div className="grid grid-cols-7 bg-[var(--bg-elevated)]">
+                      {DAYS.map(d => <div key={d} className="text-center text-xs text-[var(--text-tertiary)] py-1">{d}</div>)}
+                    </div>
+                    {/* Days grid */}
+                    <div className="grid grid-cols-7 bg-[var(--bg-base)] p-1 gap-0.5">
+                      {Array.from({ length: new Date(calView.getFullYear(), calView.getMonth(), 1).getDay() }).map((_, i) => <div key={`e${i}`} />)}
+                      {Array.from({ length: new Date(calView.getFullYear(), calView.getMonth()+1, 0).getDate() }, (_, i) => i+1).map(day => {
+                        const dateStr = toDateStr(calView.getFullYear(), calView.getMonth(), day);
+                        const isPast = isBefore(dateStr, today);
+                        const isStart = dateStr === form.startDate;
+                        const isEnd = dateStr === form.endDate;
+                        const isIn = inRange(dateStr);
+                        const isToday = dateStr === today;
+                        let bg = 'transparent';
+                        let color = 'var(--text-primary)';
+                        let fontWeight = 'normal';
+                        if (isPast) { color = 'var(--text-tertiary)'; }
+                        else if (isStart || isEnd) { bg = 'var(--accent-primary)'; color = 'white'; fontWeight = 'bold'; }
+                        else if (isIn) { bg = 'var(--glow-violet)'; color = 'var(--accent-primary)'; }
+                        return (
+                          <button type="button" key={day}
+                            onClick={() => !isPast && handleDayClick(dateStr)}
+                            style={{ background: bg, color, fontWeight, outline: isToday && !isStart && !isEnd ? '1px solid var(--accent-primary)' : 'none', opacity: isPast ? 0.35 : 1, cursor: isPast ? 'not-allowed' : 'pointer' }}
+                            className="text-xs py-1.5 rounded transition-all w-full">
+                            {day}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
+
                   <div>
                     <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Reason</label>
                     <textarea value={form.reason} onChange={e => setForm(p => ({ ...p, reason: e.target.value }))} className={`${inputClass} resize-none`} rows={3} required placeholder="Describe your reason..." />
                   </div>
                   <div className="flex gap-3 pt-2">
                     <button type="button" onClick={() => setShowForm(false)} className="flex-1 btn-secondary">Cancel</button>
-                    <button type="submit" disabled={submitting} className="flex-1 btn-primary">
+                    <button type="submit" disabled={submitting || !form.startDate || !form.endDate} className="flex-1 btn-primary">
                       {submitting ? 'Submitting...' : 'Submit Request'}
                     </button>
                   </div>

@@ -89,22 +89,12 @@ const MyPayslipsPage = () => {
 
                 <div className="space-y-2 mb-4 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-[var(--text-secondary)]">Basic</span>
+                    <span className="text-[var(--text-secondary)]">Basic Salary</span>
                     <span className="font-mono">{fmt(ps.basicSalary)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-[var(--text-secondary)]">HRA</span>
-                    <span className="font-mono text-green-500">+{fmt(ps.hra)}</span>
-                  </div>
-                  {ps.overtimePay > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-[var(--text-secondary)]">Overtime</span>
-                      <span className="font-mono text-green-500">+{fmt(ps.overtimePay)}</span>
-                    </div>
-                  )}
                   {ps.lopDays > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-[var(--text-secondary)]">LOP ({ps.lopDays}d)</span>
+                      <span className="text-[var(--text-secondary)]">Paid Leave Deduction ({ps.lopDays}d)</span>
                       <span className="font-mono text-red-400">-{fmt(ps.lopDeduction)}</span>
                     </div>
                   )}
@@ -115,7 +105,7 @@ const MyPayslipsPage = () => {
                   <div className="h-px" style={{ background: 'var(--border)' }} />
                   <div className="flex justify-between font-semibold">
                     <span>Net Salary</span>
-                    <span className="font-mono text-lg" style={{ color: 'var(--accent-primary)' }}>{fmt(ps.netSalary)}</span>
+                    <span className="font-mono text-lg" style={{ color: 'var(--accent-primary)' }}>{fmt(ps.basicSalary - (ps.lopDeduction || 0) - (ps.totalDeductions || 0))}</span>
                   </div>
                 </div>
 

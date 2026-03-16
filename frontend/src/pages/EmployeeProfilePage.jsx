@@ -205,19 +205,9 @@ const EmployeeProfilePage = () => {
                       <span className="text-sm text-[var(--text-secondary)]">Basic Salary</span>
                       <span className="font-mono font-bold text-[var(--text-primary)]">{fmt(latestPayroll.basicSalary)}</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-[var(--text-secondary)]">HRA</span>
-                      <span className="font-mono text-green-500">+{fmt(latestPayroll.hra)}</span>
-                    </div>
-                    {latestPayroll.overtimePay > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-[var(--text-secondary)] flex items-center gap-1"><TrendingUp size={14} className="text-green-500" /> Overtime</span>
-                        <span className="font-mono text-green-500">+{fmt(latestPayroll.overtimePay)}</span>
-                      </div>
-                    )}
                     {latestPayroll.lopDays > 0 && (
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-[var(--text-secondary)]">LOP ({latestPayroll.lopDays} days)</span>
+                        <span className="text-sm text-[var(--text-secondary)]">Paid Leave Deduction ({latestPayroll.lopDays}d)</span>
                         <span className="font-mono text-red-400">-{fmt(latestPayroll.lopDeduction)}</span>
                       </div>
                     )}
@@ -228,7 +218,7 @@ const EmployeeProfilePage = () => {
                     <div className="h-px" style={{ background: 'var(--border)' }} />
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-[var(--text-primary)]">Net Salary</span>
-                      <span className="font-mono font-bold text-xl" style={{ color: 'var(--accent-secondary)' }}>{fmt(latestPayroll.netSalary)}</span>
+                      <span className="font-mono font-bold text-xl" style={{ color: 'var(--accent-secondary)' }}>{fmt(latestPayroll.basicSalary - (latestPayroll.lopDeduction || 0) - (latestPayroll.totalDeductions || 0))}</span>
                     </div>
                     <p className="text-xs text-[var(--text-tertiary)]">Last processed: {latestPayroll.month} {latestPayroll.year}</p>
                   </div>

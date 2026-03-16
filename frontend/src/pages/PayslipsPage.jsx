@@ -136,18 +136,20 @@ const PayslipsPage = () => {
                     <span className="text-text-secondary">Basic Salary:</span>
                     <span className="font-mono">{formatCurrency(payslip.basicSalary)}</span>
                   </div>
+                  {payslip.lopDays > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-text-secondary">Paid Leave Deduction ({payslip.lopDays}d):</span>
+                      <span className="font-mono text-red-400">-{formatCurrency(payslip.lopDeduction)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
-                    <span className="text-text-secondary">Bonus:</span>
-                    <span className="font-mono text-green-500">+{formatCurrency(payslip.bonus)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-text-secondary">Deductions:</span>
-                    <span className="font-mono text-red-500">-{formatCurrency(payslip.deductions)}</span>
+                    <span className="text-text-secondary">PF + Prof Tax:</span>
+                    <span className="font-mono text-red-400">-{formatCurrency(payslip.totalDeductions)}</span>
                   </div>
                   <div className="h-px" style={{ background: 'var(--border)' }} />
                   <div className="flex justify-between">
                     <span className="font-semibold">Net Salary:</span>
-                    <span className="font-mono font-bold text-lg" style={{ color: 'var(--accent-primary)' }}>{formatCurrency(payslip.netSalary)}</span>
+                    <span className="font-mono font-bold text-lg" style={{ color: 'var(--accent-primary)' }}>{formatCurrency(payslip.basicSalary - (payslip.lopDeduction || 0) - (payslip.totalDeductions || 0))}</span>
                   </div>
                 </div>
 
