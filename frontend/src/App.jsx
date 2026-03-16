@@ -6,6 +6,7 @@ import { Sun, Moon, Menu } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { authStore } from './store/authStore';
 import { themeStore } from './store/themeStore';
+import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import HRDashboard from './pages/HRDashboard';
 import EmployeesPage from './pages/EmployeesPage';
@@ -76,14 +77,16 @@ const App = () => {
         </button>
       )}
 
-      {/* Theme toggle */}
-      <button
-        onClick={toggleTheme}
-        className="fixed top-4 right-16 z-50 p-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-        title="Toggle theme"
-      >
-        {isDark ? <Sun size={18} /> : <Moon size={18} />}
-      </button>
+      {/* Theme toggle — only show when not on login/landing */}
+      {isAuthenticated && (
+        <button
+          onClick={toggleTheme}
+          className="fixed top-4 right-16 z-50 p-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          title="Toggle theme"
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+      )}
 
       {/* Notification bell */}
       {isAuthenticated && (
@@ -97,7 +100,7 @@ const App = () => {
 
       <AnimatePresence mode="wait">
         <Routes>
-          <Route path="/" element={isAuthenticated ? <Navigate to={role === 'hr' ? '/dashboard' : '/my-profile'} replace /> : <Navigate to="/login" replace />} />
+          <Route path="/" element={isAuthenticated ? <Navigate to={role === 'hr' ? '/dashboard' : '/my-profile'} replace /> : <LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<ProtectedRoute hrOnly><HRDashboard /></ProtectedRoute>} />
           <Route path="/employees" element={<ProtectedRoute hrOnly><EmployeesPage /></ProtectedRoute>} />
