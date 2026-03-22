@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 
 const AGENTS = [
   { icon: Database,     label: 'Data Aggregation',      color: '#6C63FF', desc: 'Collects attendance & leave' },
-  { icon: Calculator,   label: 'Salary Calculation',     color: '#00D4AA', desc: 'Computes HRA, LOP, overtime' },
+  { icon: Calculator,   label: 'Salary Calculation',     color: '#00D4AA', desc: 'Computes LOP, overtime, PF' },
   { icon: ShieldCheck,  label: 'Compliance Validation',  color: '#FFB547', desc: 'Checks PF caps & min wage' },
   { icon: Radar,        label: 'Anomaly Detection',      color: '#FF4365', desc: 'Flags salary spikes' },
   { icon: Sparkles,     label: 'AI Explanation',         color: '#9B5DFF', desc: 'GPT-4o natural language summary' },
@@ -203,16 +203,18 @@ const LoginPage = () => {
       {/* Right Panel */}
       <div className="flex-1 flex items-center justify-center p-6 md:p-10">
         {/* Mobile logo */}
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 md:hidden flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #6C63FF, #9B5DFF)' }}>
-            <Sparkles size={16} color="#fff" />
+        <div className="flex justify-center pt-8 pb-4 md:hidden">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #6C63FF, #9B5DFF)' }}>
+              <Sparkles size={16} color="#fff" />
+            </div>
+            <span className="text-xl font-bold text-[var(--text-primary)]">PayFlow</span>
           </div>
-          <span className="text-xl font-bold text-[var(--text-primary)]">PayFlow</span>
         </div>
 
         <motion.div
-          className="w-full max-w-md mt-16 md:mt-0"
+          className="w-full max-w-md md:mt-0"
           animate={shake ? { x: [0, -10, 10, -8, 8, 0] } : {}}
           transition={{ duration: 0.4 }}
         >
@@ -220,7 +222,7 @@ const LoginPage = () => {
           <div
             className="rounded-3xl p-8 md:p-10 border backdrop-blur-md"
             style={{
-              background: 'rgba(17,17,24,0.85)',
+              background: 'var(--bg-surface)',
               borderColor: 'rgba(108,99,255,0.25)',
               boxShadow: '0 0 0 1px rgba(108,99,255,0.1), 0 24px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
             }}

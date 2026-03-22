@@ -115,11 +115,18 @@ body::after {
     padding: 1rem;
     padding-top: 4.5rem;
   }
+  .page-content {
+    padding-top: 4.5rem;
+  }
   .page-title {
     font-size: 1.4rem;
   }
   .card {
     padding: 1rem;
+  }
+  /* Prevent horizontal overflow from tables */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
   }
 }
 

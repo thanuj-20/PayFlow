@@ -83,7 +83,6 @@ const initiatePayroll = async (req, res) => {
         designation: emp.designation,
         month, year,
         basicSalary: calculated.basicSalary,
-        hra: calculated.hra,
         overtimePay: calculated.overtimePay,
         lopDeduction: calculated.lopDeduction,
         lopDays: calculated.lopDays,
@@ -182,21 +181,6 @@ const approveAllPayroll = async (req, res) => {
   }
 };
 
-const holdPayrollRecord = async (req, res) => {
-  try {
-    const db = req.db;
-    const { id } = req.params;
-    const { reason } = req.body;
-    await db.collection('payroll').updateOne(
-      { id },
-      { $set: { status: 'held', heldAt: new Date().toISOString(), heldBy: req.user.userId, holdReason: reason } }
-    );
-    res.json({ message: 'Payroll record held for review' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
 const getPayrollByEmployee = async (req, res) => {
   try {
     const db = req.db;
@@ -210,6 +194,5 @@ const getPayrollByEmployee = async (req, res) => {
   }
 };
 
-const runPayroll = initiatePayroll;
-
-module.exports = { getPayroll, getPayrollSummary, initiatePayroll, runPayroll, approvePayrollRecord, approveAllPayroll, holdPayrollRecord, getPayrollByEmployee };
+const module_exports = { getPayroll, getPayrollSummary, initiatePayroll, approvePayrollRecord, approveAllPayroll, getPayrollByEmployee };
+module.exports = module_exports;

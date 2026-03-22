@@ -11,7 +11,7 @@ const exportCSV = async (req, res) => {
       return [
         emp.id, emp.firstName, emp.lastName, emp.email,
         emp.department, emp.designation, emp.basicSalary,
-        p.hra || '', p.overtimePay || 0, p.lopDeduction || 0,
+        p.overtimePay || 0, p.lopDeduction || 0,
         p.pfDeduction || '', p.professionalTax || '',
         p.grossSalary || '', p.totalDeductions || '',
         p.netSalary || '', p.month || '', p.year || '',
@@ -19,7 +19,7 @@ const exportCSV = async (req, res) => {
       ].join(',');
     });
 
-    const header = 'ID,First Name,Last Name,Email,Department,Designation,Basic Salary,HRA,Overtime Pay,LOP Deduction,PF,Prof Tax,Gross Salary,Total Deductions,Net Salary,Month,Year,Status,Joining Date';
+    const header = 'ID,First Name,Last Name,Email,Department,Designation,Basic Salary,Overtime Pay,LOP Deduction,PF,Prof Tax,Gross Salary,Total Deductions,Net Salary,Month,Year,Status,Joining Date';
     const csv = [header, ...rows].join('\n');
 
     res.setHeader('Content-Type', 'text/csv');
@@ -116,27 +116,7 @@ const getReportsSummary = async (req, res) => {
 };
 
 const getAuditLog = async (req, res) => {
-  try {
-    const db = req.db;
-    const employees = await db.collection('employees').find({ 'modificationLog.0': { $exists: true } }).toArray();
-    const logs = [];
-    employees.forEach(emp => {
-      (emp.modificationLog || []).forEach(log => {
-        logs.push({
-          employeeId: emp.id,
-          employeeName: `${emp.firstName} ${emp.lastName}`,
-          department: emp.department,
-          changedAt: log.changedAt,
-          changedBy: log.changedBy,
-          reason: log.reason,
-        });
-      });
-    });
-    logs.sort((a, b) => new Date(b.changedAt) - new Date(a.changedAt));
-    res.json(logs);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+  res.status(410).json({ error: 'Audit log has been removed' });
 };
 
 module.exports = { getReportsSummary, exportCSV, getAuditLog };

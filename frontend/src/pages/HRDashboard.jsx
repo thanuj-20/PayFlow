@@ -169,7 +169,7 @@ const HRDashboard = () => {
       <Sidebar />
       <div className="md:ml-60 page-content pt-16 md:pt-0">
         <motion.div
-          className="p-8"
+          className="p-4 md:p-8"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}

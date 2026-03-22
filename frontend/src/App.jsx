@@ -17,12 +17,10 @@ import PayrollPage from './pages/PayrollPage';
 import PayslipsPage from './pages/PayslipsPage';
 import ReportsPage from './pages/ReportsPage';
 import MyAttendancePage from './pages/MyAttendancePage';
-import MyPayrollPage from './pages/MyPayrollPage';
 import MyPayslipsPage from './pages/MyPayslipsPage';
 import LeavePage from './pages/LeavePage';
 import MyLeavePage from './pages/MyLeavePage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
-import AuditLogPage from './pages/AuditLogPage';
 import NotificationBell from './components/NotificationBell';
 import QuickSearch from './components/QuickSearch';
 import ChatBot from './components/ChatBot';
@@ -37,7 +35,7 @@ const ProtectedRoute = ({ children, hrOnly = false }) => {
 const AppInner = () => {
   const { isAuthenticated, role, token, clearAuth } = authStore();
   const { isDark, toggleTheme } = themeStore();
-  const { open: sidebarOpen, setOpen: setSidebarOpen } = useSidebar();
+  const { open: _sidebarOpen, setOpen: setSidebarOpen } = useSidebar();
   const [warnedExpiry, setWarnedExpiry] = useState(false);
 
   useEffect(() => {
@@ -69,30 +67,46 @@ const AppInner = () => {
 
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      {/* Hamburger — mobile only */}
+      {/* Top bar — mobile only */}
       {isAuthenticated && (
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="fixed top-4 left-4 z-50 md:hidden p-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-        >
-          <Menu size={20} />
-        </button>
+        <div className="fixed top-0 left-0 right-0 h-14 z-50 md:hidden flex items-center justify-between px-4 bg-[var(--bg-surface)] border-b border-[var(--border)]">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            <Menu size={20} />
+          </button>
+          <span className="font-bold text-lg">
+            <span className="text-[var(--text-primary)]">Pay</span>
+            <span className="text-[var(--accent-primary)]">Flow</span>
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              title="Toggle theme"
+            >
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <NotificationBell />
+          </div>
+        </div>
       )}
 
-      {/* Theme toggle */}
+      {/* Theme toggle — desktop only */}
       {isAuthenticated && (
         <button
           onClick={toggleTheme}
-          className="fixed top-4 right-14 z-50 p-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          className="hidden md:block fixed top-4 right-14 z-50 p-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           title="Toggle theme"
         >
           {isDark ? <Sun size={18} /> : <Moon size={18} />}
         </button>
       )}
 
-      {/* Notification bell */}
+      {/* Notification bell — desktop only */}
       {isAuthenticated && (
-        <div className="fixed top-4 right-4 z-50">
+        <div className="hidden md:block fixed top-4 right-4 z-50">
           <NotificationBell />
         </div>
       )}
@@ -114,9 +128,7 @@ const AppInner = () => {
           <Route path="/payroll" element={<ProtectedRoute hrOnly><PayrollPage /></ProtectedRoute>} />
           <Route path="/payslips" element={<ProtectedRoute hrOnly><PayslipsPage /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute hrOnly><ReportsPage /></ProtectedRoute>} />
-          <Route path="/audit-log" element={<ProtectedRoute hrOnly><AuditLogPage /></ProtectedRoute>} />
           <Route path="/my-attendance" element={<ProtectedRoute><MyAttendancePage /></ProtectedRoute>} />
-          <Route path="/my-payroll" element={<ProtectedRoute><MyPayrollPage /></ProtectedRoute>} />
           <Route path="/my-payslips" element={<ProtectedRoute><MyPayslipsPage /></ProtectedRoute>} />
           <Route path="/leaves" element={<ProtectedRoute hrOnly><LeavePage /></ProtectedRoute>} />
           <Route path="/my-leaves" element={<ProtectedRoute><MyLeavePage /></ProtectedRoute>} />

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Calendar, Building, TrendingUp, TrendingDown, FileText, Clock, UserCheck, AlertCircle, Download, Copy, Printer } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-import { getEmployee, getMyPayslips, getMyPayroll, getAttendance, downloadPayslip } from '../services/api';
+import { getEmployee, getMyPayslips, getAttendance, downloadPayslip } from '../services/api';
 import { authStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 
@@ -43,7 +43,6 @@ const SalaryChart = ({ payslips }) => {
 const EmployeeProfilePage = () => {
   const [employee, setEmployee] = useState(null);
   const [payslips, setPayslips] = useState([]);
-  const [payroll, setPayroll] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(null);
@@ -60,13 +59,11 @@ const EmployeeProfilePage = () => {
         setLoading(false);
         return;
       }
-      const [payslipRes, payrollRes, attendanceRes] = await Promise.allSettled([
+      const [payslipRes, attendanceRes] = await Promise.allSettled([
         getMyPayslips(employeeId),
-        getMyPayroll(employeeId),
         getAttendance({ employeeId }),
       ]);
       if (payslipRes.status === 'fulfilled') setPayslips(payslipRes.value.data);
-      if (payrollRes.status === 'fulfilled') setPayroll(payrollRes.value.data);
       if (attendanceRes.status === 'fulfilled') setAttendance(attendanceRes.value.data);
       setLoading(false);
     };
@@ -109,14 +106,14 @@ const EmployeeProfilePage = () => {
   const presentDays = attendance.filter(a => a.status === 'present').length;
   const lateDays = attendance.filter(a => a.status === 'late').length;
   const absentDays = attendance.filter(a => a.status === 'absent').length;
-  const latestPayroll = payroll[payroll.length - 1];
+  const latestPayroll = payslips[payslips.length - 1];
 
   return (
     <div className="min-h-screen bg-[var(--bg-base)]">
       <Sidebar />
       <div className="md:ml-60 page-content pt-16 md:pt-0">
         <motion.div
-          className="p-8"
+          className="p-4 md:p-8"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
