@@ -16,20 +16,13 @@ const FEATURES = [
   { icon: FileText,     title: 'PDF Payslips',         desc: 'Beautifully styled payslips generated instantly and downloadable by employees anytime.', color: '#00D4AA' },
 ];
 
-const STATS = [
-  { value: '5', label: 'AI Agents', suffix: '' },
-  { value: '99', label: 'Accuracy', suffix: '%' },
-  { value: '0', label: 'Manual Errors', suffix: '' },
-  { value: '60', label: 'Faster Payroll', suffix: '%' },
-];
-
-const NAV_LINKS = ['Features', 'How It Works', 'Stats'];
+const NAV_LINKS = ['Features', 'How It Works'];
 
 const STEPS = [
   { icon: Users,        step: '01', title: 'Add Employees',    desc: 'HR adds employees — credentials are auto-generated and emailed instantly.' },
   { icon: CalendarCheck,step: '02', title: 'Track Attendance', desc: 'Employees check in/out daily. Overtime is calculated automatically.' },
   { icon: Zap,          step: '03', title: 'Initiate Payroll', desc: 'One click runs all 5 AI agents — data, calculation, compliance, anomaly, explanation.' },
-  { icon: CheckCircle,  step: '04', title: 'Approve & Publish', desc: 'HR reviews flagged records, approves payroll, and payslips are instantly available.' },
+  { icon: CheckCircle, step: '04', title: 'Approve & Publish', desc: 'HR reviews flagged records, approves payroll, and payslips are instantly available.' },
 ];
 
 const FadeIn = ({ children, delay = 0, className = '' }) => {
@@ -46,28 +39,6 @@ const FadeIn = ({ children, delay = 0, className = '' }) => {
       {children}
     </motion.div>
   );
-};
-
-const CountUp = ({ target, suffix }) => {
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true });
-
-  useEffect(() => {
-    if (!inView) return;
-    let start = 0;
-    const end = parseInt(target);
-    const duration = 1500;
-    const step = Math.ceil(end / (duration / 16));
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= end) { setCount(end); clearInterval(timer); }
-      else setCount(start);
-    }, 16);
-    return () => clearInterval(timer);
-  }, [inView, target]);
-
-  return <span ref={ref}>{count}{suffix}</span>;
 };
 
 const LandingPage = () => {
@@ -133,15 +104,6 @@ const LandingPage = () => {
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full pointer-events-none"
           style={{ background: 'radial-gradient(circle, rgba(0,212,170,0.10) 0%, transparent 70%)', filter: 'blur(40px)' }} />
 
-        {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-medium mb-6"
-          style={{ borderColor: 'rgba(108,99,255,0.4)', background: 'rgba(108,99,255,0.1)', color: '#9B8FFF' }}
-        >
-          <Sparkles size={12} /> Powered by GPT-4o · 5 AI Agents
-        </motion.div>
-
         {/* Headline */}
         <motion.h1
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}
@@ -167,7 +129,7 @@ const LandingPage = () => {
           <button onClick={() => navigate('/login')}
             className="px-8 py-4 rounded-xl text-white font-semibold text-base flex items-center gap-2 group"
             style={{ background: 'linear-gradient(135deg,#6C63FF,#9B5DFF)', boxShadow: '0 0 40px rgba(108,99,255,0.3)' }}>
-            Start for Free
+            Sign In
             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </button>
           <button onClick={() => scrollTo('how-it-works')}
@@ -177,75 +139,9 @@ const LandingPage = () => {
           </button>
         </motion.div>
 
-        {/* Hero dashboard preview */}
-        <motion.div
-          initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.5 }}
-          className="mt-20 w-full max-w-5xl mx-auto relative"
-        >
-          <div className="rounded-2xl border overflow-hidden"
-            style={{ borderColor: 'rgba(108,99,255,0.2)', background: 'rgba(17,17,24,0.9)', boxShadow: '0 0 80px rgba(108,99,255,0.15), 0 40px 80px rgba(0,0,0,0.5)' }}>
-            {/* Fake browser bar */}
-            <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: '#1E1E2E', background: '#0D0D14' }}>
-              <div className="w-3 h-3 rounded-full bg-[#FF4365]" />
-              <div className="w-3 h-3 rounded-full bg-[#FFB547]" />
-              <div className="w-3 h-3 rounded-full bg-[#00D4AA]" />
-              <div className="flex-1 mx-4 px-3 py-1 rounded-md text-xs text-[#44445A]" style={{ background: '#1A1A24' }}>
-                payflow-b.onrender.com/dashboard
-              </div>
-            </div>
-            {/* Dashboard mockup */}
-            <div className="p-6 grid grid-cols-4 gap-4">
-              {[
-                { label: 'Total Employees', value: '24', color: '#6C63FF' },
-                { label: 'Active', value: '22', color: '#00D4AA' },
-                { label: 'Pending Payroll', value: '3', color: '#FFB547' },
-                { label: 'Present Today', value: '18', color: '#9B5DFF' },
-              ].map(card => (
-                <div key={card.label} className="rounded-xl p-4 border" style={{ background: '#1A1A24', borderColor: '#1E1E2E', borderLeft: `3px solid ${card.color}` }}>
-                  <p className="text-xs text-[#8888AA] mb-1">{card.label}</p>
-                  <p className="text-2xl font-bold font-mono" style={{ color: card.color }}>{card.value}</p>
-                </div>
-              ))}
-              <div className="col-span-4 rounded-xl p-4 border" style={{ background: '#1A1A24', borderColor: '#1E1E2E' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-semibold">AI Payroll Pipeline</p>
-                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(0,212,170,0.15)', color: '#00D4AA' }}>Running</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {['Data', 'Calculate', 'Compliance', 'Anomaly', 'Explain'].map((s, i) => (
-                    <div key={s} className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
-                        style={{ background: i < 3 ? 'rgba(108,99,255,0.2)' : i === 3 ? 'rgba(108,99,255,0.1)' : '#1E1E2E', color: i < 3 ? '#9B8FFF' : i === 3 ? '#6C63FF' : '#44445A', border: `1px solid ${i < 3 ? 'rgba(108,99,255,0.3)' : '#1E1E2E'}` }}>
-                        {i < 3 && <CheckCircle size={10} />} {s}
-                      </div>
-                      {i < 4 && <div className="w-4 h-px" style={{ background: i < 3 ? '#6C63FF' : '#1E1E2E' }} />}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-          {/* Glow under card */}
-          <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-3/4 h-20 pointer-events-none"
-            style={{ background: 'radial-gradient(ellipse, rgba(108,99,255,0.2) 0%, transparent 70%)', filter: 'blur(20px)' }} />
-        </motion.div>
       </section>
 
-      {/* Stats */}
-      <section id="stats" className="py-24 px-6">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
-          {STATS.map((s, i) => (
-            <FadeIn key={s.label} delay={i * 0.1}>
-              <div className="text-center p-6 rounded-2xl border" style={{ background: 'rgba(17,17,24,0.8)', borderColor: '#1E1E2E' }}>
-                <div className="text-4xl font-bold mb-1" style={{ background: 'linear-gradient(135deg,#6C63FF,#00D4AA)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                  <CountUp target={s.value} suffix={s.suffix} />
-                </div>
-                <div className="text-sm text-[#8888AA]">{s.label}</div>
-              </div>
-            </FadeIn>
-          ))}
-        </div>
-      </section>
+
 
       {/* Features */}
       <section id="features" className="py-24 px-6">

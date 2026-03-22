@@ -22,16 +22,17 @@ const LeaveCalendar = ({ leaves = [] }) => {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  // Build a map of date -> leave info
+  // Build a map of date -> leave info (approved takes priority over pending)
   const leaveMap = {};
-  leaves.forEach(l => {
+  const sorted = [...leaves].sort(a => a.status === 'approved' ? 1 : -1); // approved last = overwrites pending
+  sorted.forEach(l => {
+    if (l.status === 'rejected') return;
     const start = new Date(l.startDate);
     const end = new Date(l.endDate);
-    // Use a new Date each iteration to avoid mutation
     const cur = new Date(start);
     while (cur <= end) {
       if (cur.getMonth() === month && cur.getFullYear() === year) {
-        leaveMap[cur.getDate()] = { type: l.leaveType, status: l.status };
+        leaveMap[cur.getDate()] = { type: l.leaveType === 'unpaid' ? 'paid' : l.leaveType, status: l.status };
       }
       cur.setDate(cur.getDate() + 1);
     }

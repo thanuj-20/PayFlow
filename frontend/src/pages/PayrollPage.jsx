@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DollarSign, TrendingUp, TrendingDown, Play, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Shield, Zap } from 'lucide-react';
+import { DollarSign, TrendingUp, Play, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Shield, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
-import { getPayroll, getPayrollSummary, initiatePayroll, approvePayrollRecord, approveAllPayroll, holdPayrollRecord } from '../services/api';
+import { getPayroll, getPayrollSummary, initiatePayroll, approvePayrollRecord, approveAllPayroll } from '../services/api';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -20,7 +20,7 @@ const SeverityIcon = ({ severity }) => {
   return <AlertTriangle size={14} className="text-blue-400" />;
 };
 
-const PayrollRow = ({ record, onApprove, onHold, approving, holding }) => {
+const PayrollRow = ({ record, onApprove, approving }) => {
   const [expanded, setExpanded] = useState(false);
   const hasIssues = !record.compliance?.isCompliant || record.anomalies?.hasAnomalies;
 
@@ -43,16 +43,10 @@ const PayrollRow = ({ record, onApprove, onHold, approving, holding }) => {
         <td>
           <div className="flex items-center gap-2">
             {record.status === 'pending_approval' && (
-              <>
-                <button onClick={() => onApprove(record.id)} disabled={approving === record.id}
-                  className="p-1.5 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white transition-colors disabled:opacity-50">
-                  {approving === record.id ? <div className="w-3 h-3 border border-green-400 border-t-transparent rounded-full animate-spin" /> : <CheckCircle size={14} />}
-                </button>
-                <button onClick={() => onHold(record.id)} disabled={holding === record.id}
-                  className="p-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50">
-                  {holding === record.id ? <div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" /> : <XCircle size={14} />}
-                </button>
-              </>
+              <button onClick={() => onApprove(record.id)} disabled={approving === record.id}
+                className="p-1.5 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white transition-colors disabled:opacity-50">
+                {approving === record.id ? <div className="w-3 h-3 border border-green-400 border-t-transparent rounded-full animate-spin" /> : <CheckCircle size={14} />}
+              </button>
             )}
             <button onClick={() => setExpanded(!expanded)} className="p-1.5 rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
               {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -137,7 +131,6 @@ const PayrollPage = () => {
   const [initiating, setInitiating] = useState(false);
   const [approvingAll, setApprovingAll] = useState(false);
   const [approving, setApproving] = useState(null);
-  const [holding, setHolding] = useState(null);
 
   const years = Array.from({ length: 4 }, (_, i) => now.getFullYear() - i);
 
@@ -197,21 +190,6 @@ const PayrollPage = () => {
       toast.error('Failed to approve');
     } finally {
       setApproving(null);
-    }
-  };
-
-  const handleHold = async (id) => {
-    const reason = window.prompt('Reason for holding this record:');
-    if (!reason) return;
-    setHolding(id);
-    try {
-      await holdPayrollRecord(id, reason);
-      toast.success('Record held for review');
-      await fetchData();
-    } catch {
-      toast.error('Failed to hold record');
-    } finally {
-      setHolding(null);
     }
   };
 
@@ -277,7 +255,6 @@ const PayrollPage = () => {
                 { label: 'Pending Review', count: pending.length, color: 'text-yellow-400' },
                 { label: 'Flagged', count: flagged.length, color: 'text-red-400' },
                 { label: 'Approved', count: records.filter(r => r.status === 'approved').length, color: 'text-green-400' },
-                { label: 'Held', count: records.filter(r => r.status === 'held').length, color: 'text-orange-400' },
               ].map(({ label, count, color }) => (
                 <div key={label} className="text-center">
                   <p className={`text-2xl font-bold font-mono ${color}`}>{count}</p>
@@ -312,7 +289,7 @@ const PayrollPage = () => {
                 </thead>
                 <tbody>
                   {records.map(record => (
-                    <PayrollRow key={record.id} record={record} onApprove={handleApprove} onHold={handleHold} approving={approving} holding={holding} />
+                    <PayrollRow key={record.id} record={record} onApprove={handleApprove} approving={approving} />
                   ))}
                 </tbody>
               </table>

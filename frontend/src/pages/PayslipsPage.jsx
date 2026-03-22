@@ -1,28 +1,24 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { FileText, Download, AlertCircle, Play } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FileText, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
-import { getAllPayslips, runPayroll, downloadPayslip } from '../services/api';
+import { getAllPayslips, downloadPayslip } from '../services/api';
 
-const ShimmerCard = () => (
-  <motion.div className="card" style={{ background: 'linear-gradient(90deg, var(--bg-surface), var(--bg-elevated), var(--bg-surface))', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite', height: '280px' }} />
-);
-
-const ErrorState = ({ message, onRetry }) => (
-  <div className="flex flex-col items-center justify-center h-96 gap-4">
-    <AlertCircle className="w-16 h-16 text-red-500" />
-    <p className="text-lg text-text-secondary">{message}</p>
-    <button onClick={onRetry} className="btn-primary">Retry</button>
-  </div>
-);
+const formatCurrency = (n) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
 
 const PayslipsPage = () => {
   const [payslips, setPayslips] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [processing, setProcessing] = useState(false);
   const [downloading, setDownloading] = useState(null);
+  const [expanded, setExpanded] = useState(null);
+
+  useEffect(() => {
+    getAllPayslips()
+      .then(r => setPayslips(r.data))
+      .catch(() => toast.error('Failed to load payslips'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleDownload = async (ps) => {
     setDownloading(ps.id);
@@ -42,35 +38,13 @@ const PayslipsPage = () => {
     }
   };
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await getAllPayslips();
-      setPayslips(response.data);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Could not load payslips');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { fetchData(); }, []);
-
-  const handleRunPayroll = async () => {
-    try {
-      setProcessing(true);
-      await runPayroll();
-      toast.success('Payroll processed — payslips generated');
-      await fetchData();
-    } catch {
-      toast.error('Failed to process payroll');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const formatCurrency = (amount) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
+  // Group payslips by employeeId
+  const grouped = payslips.reduce((acc, ps) => {
+    if (!acc[ps.employeeId]) acc[ps.employeeId] = { employeeId: ps.employeeId, employeeName: ps.employeeName, department: ps.department, designation: ps.designation, payslips: [] };
+    acc[ps.employeeId].payslips.push(ps);
+    return acc;
+  }, {});
+  const employees = Object.values(grouped);
 
   return (
     <div className="app-layout">
@@ -79,92 +53,88 @@ const PayslipsPage = () => {
         <div className="page-header">
           <div>
             <h1 className="page-title">Payslips</h1>
-            <p className="page-subtitle">View and download employee payslips</p>
+            <p className="page-subtitle">View and download individual employee payslips</p>
           </div>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1,2,3,4,5,6].map(i => <ShimmerCard key={i} />)}
-          </div>
-        ) : error ? (
-          <ErrorState message={error} onRetry={fetchData} />
-        ) : payslips.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-96 gap-4">
+          <div className="text-center py-16 text-[var(--text-secondary)]">Loading...</div>
+        ) : employees.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-96 gap-3">
             <FileText className="w-16 h-16 text-[var(--text-tertiary)]" />
             <p className="text-lg text-[var(--text-secondary)]">No payslips generated yet</p>
-            <p className="text-sm text-[var(--text-tertiary)]">Run payroll to generate payslips for all active employees</p>
-            <button onClick={handleRunPayroll} disabled={processing} className="btn-primary flex items-center gap-2">
-              {processing ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Play className="w-4 h-4" />}
-              {processing ? 'Processing...' : 'Run Payroll Now'}
-            </button>
+            <p className="text-sm text-[var(--text-tertiary)]">Payslips are generated when payroll is approved</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {payslips.map((payslip, index) => (
-              <motion.div
-                key={payslip.id}
-                className="card accent-primary"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-lg bg-[var(--glow-violet)] flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-[var(--accent-primary)]" />
+          <div className="space-y-3">
+            {employees.map((emp, i) => (
+              <motion.div key={emp.employeeId} className="card" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                {/* Employee row */}
+                <button className="w-full flex items-center justify-between" onClick={() => setExpanded(expanded === emp.employeeId ? null : emp.employeeId)}>
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-[var(--glow-violet)] flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-[var(--accent-primary)]" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">{payslip.employeeName}</h3>
-                      <p className="text-sm text-text-secondary">{payslip.designation}</p>
+                    <div className="text-left">
+                      <p className="font-semibold">{emp.employeeName}</p>
+                      <p className="text-sm text-[var(--text-secondary)]">{emp.designation} · {emp.department}</p>
                     </div>
                   </div>
-                  <span className="badge badge-success">{payslip.status}</span>
-                </div>
-
-                <div className="space-y-3 mb-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-text-secondary">Department:</span>
-                    <span className="font-medium">{payslip.department}</span>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-[var(--text-secondary)]">{emp.payslips.length} payslip{emp.payslips.length > 1 ? 's' : ''}</span>
+                    {expanded === emp.employeeId ? <ChevronUp size={18} className="text-[var(--text-secondary)]" /> : <ChevronDown size={18} className="text-[var(--text-secondary)]" />}
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-text-secondary">Period:</span>
-                    <span className="font-mono">{payslip.month} {payslip.year}</span>
-                  </div>
-                  <div className="h-px" style={{ background: 'var(--border)' }} />
-                  <div className="flex justify-between text-sm">
-                    <span className="text-text-secondary">Basic Salary:</span>
-                    <span className="font-mono">{formatCurrency(payslip.basicSalary)}</span>
-                  </div>
-                  {payslip.lopDays > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-secondary">Paid Leave Deduction ({payslip.lopDays}d):</span>
-                      <span className="font-mono text-red-400">-{formatCurrency(payslip.lopDeduction)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-text-secondary">PF + Prof Tax:</span>
-                    <span className="font-mono text-red-400">-{formatCurrency(payslip.totalDeductions)}</span>
-                  </div>
-                  <div className="h-px" style={{ background: 'var(--border)' }} />
-                  <div className="flex justify-between">
-                    <span className="font-semibold">Net Salary:</span>
-                    <span className="font-mono font-bold text-lg" style={{ color: 'var(--accent-primary)' }}>{formatCurrency(payslip.basicSalary - (payslip.lopDeduction || 0) - (payslip.totalDeductions || 0))}</span>
-                  </div>
-                </div>
-
-                <button onClick={() => handleDownload(payslip)} disabled={downloading === payslip.id} className="btn-secondary w-full flex items-center justify-center gap-2">
-                  {downloading === payslip.id
-                    ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    : <Download className="w-4 h-4" />}
-                  {downloading === payslip.id ? 'Downloading...' : 'Download PDF'}
                 </button>
+
+                {/* Payslips list */}
+                <AnimatePresence>
+                  {expanded === emp.employeeId && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                      <div className="mt-4 border-t border-[var(--border)] pt-4 space-y-3">
+                        {emp.payslips.sort((a, b) => b.year - a.year || 0).map(ps => (
+                          <div key={ps.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-base)]">
+                            <div className="flex items-center gap-6">
+                              <div>
+                                <p className="text-sm font-semibold">{ps.month} {ps.year}</p>
+                                <p className="text-xs text-[var(--text-secondary)]">Generated {new Date(ps.generatedAt).toLocaleDateString('en-IN')}</p>
+                              </div>
+                              <div className="hidden md:flex items-center gap-6 text-sm">
+                                <div>
+                                  <p className="text-xs text-[var(--text-secondary)]">Basic</p>
+                                  <p className="font-mono">{formatCurrency(ps.basicSalary)}</p>
+                                </div>
+                                {ps.lopDays > 0 && (
+                                  <div>
+                                    <p className="text-xs text-[var(--text-secondary)]">Leave Deduction</p>
+                                    <p className="font-mono text-red-400">-{formatCurrency(ps.lopDeduction)}</p>
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="text-xs text-[var(--text-secondary)]">PF + Tax</p>
+                                  <p className="font-mono text-red-400">-{formatCurrency(ps.totalDeductions)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-[var(--text-secondary)]">Net Salary</p>
+                                  <p className="font-mono font-bold" style={{ color: 'var(--accent-primary)' }}>{formatCurrency(ps.basicSalary - (ps.lopDeduction || 0) - (ps.totalDeductions || 0))}</p>
+                                </div>
+                              </div>
+                            </div>
+                            <button onClick={() => handleDownload(ps)} disabled={downloading === ps.id}
+                              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm btn-secondary">
+                              {downloading === ps.id ? <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Download size={14} />}
+                              PDF
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ))}
           </div>
         )}
       </main>
-      <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
     </div>
   );
 };

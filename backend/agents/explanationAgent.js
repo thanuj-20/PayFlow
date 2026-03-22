@@ -15,7 +15,6 @@ const buildContext = (calculatedPayroll, employee, previousPayroll) => {
     designation: employee.designation,
     department: employee.department,
     basicSalary: calculatedPayroll.basicSalary,
-    hra: calculatedPayroll.hra,
     overtimePay: calculatedPayroll.overtimePay,
     overtimeHours: calculatedPayroll.overtimeHours,
     lopDays: calculatedPayroll.lopDays,
@@ -33,17 +32,16 @@ const buildContext = (calculatedPayroll, employee, previousPayroll) => {
 const ruleBased = (ctx) => {
   const lines = [];
   lines.push(`Basic salary: ${fmt(ctx.basicSalary)}`);
-  lines.push(`HRA (40% of basic): +${fmt(ctx.hra)}`);
   if (ctx.overtimePay > 0) lines.push(`Overtime pay (${ctx.overtimeHours}h at 2x rate): +${fmt(ctx.overtimePay)}`);
-  if (ctx.lopDays > 0) lines.push(`Loss of Pay (${ctx.lopDays} day${ctx.lopDays > 1 ? 's' : ''}): -${fmt(ctx.lopDeduction)}`);
+  if (ctx.lopDays > 0) lines.push(`Paid leave deduction (${ctx.lopDays} day${ctx.lopDays > 1 ? 's' : ''}): -${fmt(ctx.lopDeduction)}`);
+  lines.push(`Gross salary: ${fmt(ctx.grossSalary)}`);
   lines.push(`PF deduction (12%, capped ₹1,800): -${fmt(ctx.pfDeduction)}`);
   lines.push(`Professional tax: -${fmt(ctx.professionalTax)}`);
-  lines.push(`Gross salary: ${fmt(ctx.grossSalary)}`);
   lines.push(`Net salary: ${fmt(ctx.netSalary)}`);
   if (ctx.netChange !== null && ctx.netChange !== 0) {
     const dir = ctx.netChange > 0 ? 'increased' : 'decreased';
     const reasons = [];
-    if (ctx.lopDays > 0) reasons.push(`${ctx.lopDays} LOP day(s)`);
+    if (ctx.lopDays > 0) reasons.push(`${ctx.lopDays} paid leave day(s)`);
     if (ctx.overtimePay > 0) reasons.push('overtime pay');
     lines.push(`Salary ${dir} by ${fmt(Math.abs(ctx.netChange))} vs last month${reasons.length ? ' due to ' + reasons.join(' and ') : ''}.`);
   }
@@ -59,8 +57,8 @@ const generate = async (calculatedPayroll, employee, previousPayroll) => {
     const prompt = `You are a payroll assistant. Write a clear, friendly 3-4 sentence salary explanation for an employee.
 
 Employee: ${ctx.employeeName} (${ctx.designation}, ${ctx.department})
-Basic: ${fmt(ctx.basicSalary)} | HRA: +${fmt(ctx.hra)} | Overtime (${ctx.overtimeHours}h): +${fmt(ctx.overtimePay)}
-LOP (${ctx.lopDays} days): -${fmt(ctx.lopDeduction)} | PF: -${fmt(ctx.pfDeduction)} | Prof Tax: -${fmt(ctx.professionalTax)}
+Basic: ${fmt(ctx.basicSalary)} | Overtime (${ctx.overtimeHours}h): +${fmt(ctx.overtimePay)}
+Paid Leave Deduction (${ctx.lopDays} days): -${fmt(ctx.lopDeduction)} | PF: -${fmt(ctx.pfDeduction)} | Prof Tax: -${fmt(ctx.professionalTax)}
 Gross: ${fmt(ctx.grossSalary)} | Net: ${fmt(ctx.netSalary)}
 ${ctx.previousNetSalary ? `Previous month net: ${fmt(ctx.previousNetSalary)} (change: ${ctx.netChange >= 0 ? '+' : ''}${fmt(ctx.netChange)})` : 'First month on record.'}
 

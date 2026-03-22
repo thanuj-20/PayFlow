@@ -1,8 +1,7 @@
 // Agent 2: Payroll Calculation Agent
-// Rule-based salary engine: LOP, overtime, HRA, PF, professional tax
+// Rule-based salary engine: LOP, overtime, PF, professional tax
 
 const OVERTIME_RATE_MULTIPLIER = 2;    // 2x hourly rate
-const HRA_PERCENT = 0.40;              // 40% of basic
 const PF_PERCENT = 0.12;               // 12% of basic (employee contribution)
 const PF_CAP = 1800;                   // PF capped at ₹1800/month
 const PROFESSIONAL_TAX = 200;          // flat ₹200/month
@@ -17,20 +16,17 @@ const calculate = (employee, aggregatedData) => {
   const perDaySalary = basicSalary / workingDays;
   const perHourSalary = perDaySalary / WORKING_HOURS_PER_DAY;
 
-  // LOP deduction
+  // LOP deduction (paid leave deduction)
   const lopDeduction = Math.round(perDaySalary * lopDays);
 
   // Overtime pay
   const overtimePay = Math.round(perHourSalary * OVERTIME_RATE_MULTIPLIER * overtimeHours);
 
-  // HRA
-  const hra = Math.round(basicSalary * HRA_PERCENT);
-
   // PF deduction (capped)
   const pfDeduction = Math.min(Math.round(basicSalary * PF_PERCENT), PF_CAP);
 
-  // Gross = basic + HRA + overtime - LOP
-  const grossSalary = basicSalary + hra + overtimePay - lopDeduction;
+  // Gross = basic + overtime - LOP
+  const grossSalary = basicSalary + overtimePay - lopDeduction;
 
   // Total deductions
   const totalDeductions = pfDeduction + PROFESSIONAL_TAX;
@@ -40,7 +36,6 @@ const calculate = (employee, aggregatedData) => {
 
   return {
     basicSalary,
-    hra,
     overtimePay,
     lopDeduction,
     lopDays,

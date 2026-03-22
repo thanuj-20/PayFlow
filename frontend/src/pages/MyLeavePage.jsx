@@ -162,7 +162,7 @@ const MyLeavePage = () => {
                   {leaves.slice(0, 4).map(l => (
                     <div key={l.id} className="flex items-center justify-between py-2 border-b border-[var(--border)] last:border-0">
                       <div>
-                        <p className="text-sm font-medium capitalize">{l.leaveType} Leave</p>
+                        <p className="text-sm font-medium capitalize">{l.leaveType === 'unpaid' ? 'Paid' : l.leaveType} Leave</p>
                         <p className="text-xs text-[var(--text-secondary)]">{l.startDate} → {l.endDate} ({l.days}d)</p>
                       </div>
                       <span className={`badge ${statusBadge(l.status)}`}>{l.status}</span>
@@ -186,7 +186,7 @@ const MyLeavePage = () => {
                 <tbody>
                   {leaves.map(l => (
                     <tr key={l.id}>
-                      <td className="capitalize">{l.leaveType}</td>
+                      <td className="capitalize">{l.leaveType === 'unpaid' ? 'Paid' : l.leaveType} Leave</td>
                       <td className="font-mono">{l.startDate}</td>
                       <td className="font-mono">{l.endDate}</td>
                       <td className="font-mono">{l.days}</td>

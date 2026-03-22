@@ -29,16 +29,20 @@ const aggregate = async (db, employeeId, month, year) => {
   const presentDays = monthAttendance.filter(a => a.status === 'present' || a.status === 'late').length;
   const absentDays = monthAttendance.filter(a => a.status === 'absent').length;
 
-  // Count only the leave days that fall within this month
-  let approvedLeaveDays = 0;
+  // Collect unique leave dates within this month (deduplicate overlapping leaves on same dates)
+  const leaveDateSet = new Set();
   monthLeaves.forEach(l => {
     const start = new Date(Math.max(new Date(l.startDate), new Date(monthStart)));
     const end = new Date(Math.min(new Date(l.endDate), new Date(monthEnd)));
-    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-    approvedLeaveDays += Math.max(0, days);
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      leaveDateSet.add(d.toISOString().split('T')[0]);
+    }
   });
+  const approvedLeaveDays = leaveDateSet.size;
 
-  const lopDays = Math.max(0, absentDays - approvedLeaveDays);
+  // lopDays = unapproved absents + all approved leave days (all leave types deduct salary)
+  const unapprovedAbsents = Math.max(0, absentDays - approvedLeaveDays);
+  const lopDays = unapprovedAbsents + approvedLeaveDays;
   const overtimeHours = monthAttendance.reduce((sum, a) => sum + (a.overtimeHours || 0), 0);
 
   return { presentDays, absentDays, approvedLeaveDays, lopDays, overtimeHours, workingDays: WORKING_DAYS_PER_MONTH };
