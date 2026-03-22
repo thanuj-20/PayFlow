@@ -128,12 +128,12 @@ const EmployeeProfilePage = () => {
               className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl p-8"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             >
-              <div className="flex items-center gap-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-[var(--accent-primary)] to-[#9B5DFF] rounded-full flex items-center justify-center text-3xl font-bold text-white flex-shrink-0">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                <div className="w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-[var(--accent-primary)] to-[#9B5DFF] rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold text-white flex-shrink-0">
                   {initials}
                 </div>
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-2">
                     {employee.firstName} {employee.lastName}
                   </h1>
                   <div className="flex items-center gap-3 flex-wrap">
@@ -144,10 +144,10 @@ const EmployeeProfilePage = () => {
                     </span>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="sm:text-right">
                   <p className="text-sm text-[var(--text-secondary)] mb-1">Employee ID</p>
-                  <div className="flex items-center gap-2 justify-end">
-                    <p className="font-mono text-[var(--accent-primary)] font-bold">{employee.id}</p>
+                  <div className="flex items-center gap-2 sm:justify-end">
+                    <p className="font-mono text-[var(--accent-primary)] font-bold text-sm">{employee.id}</p>
                     <button
                       onClick={() => { navigator.clipboard.writeText(employee.id); toast.success('Employee ID copied'); }}
                       className="p-1 rounded text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] transition-colors"

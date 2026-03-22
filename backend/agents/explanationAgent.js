@@ -1,10 +1,16 @@
 // Agent 5: Explanation Agent
-// Uses OpenAI GPT to generate natural language salary explanations
+// Uses Azure OpenAI to generate natural language salary explanations
 // Falls back to rule-based template if API key not set or call fails
 
-const OpenAI = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here'
-  ? new (require('openai'))({ apiKey: process.env.OPENAI_API_KEY })
-  : null;
+const { AzureOpenAI } = require('openai');
+
+const getClient = () => {
+  const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+  const apiKey = process.env.AZURE_OPENAI_API_KEY;
+  const deployment = process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o';
+  if (!endpoint || !apiKey) return null;
+  return { client: new AzureOpenAI({ endpoint, apiKey, apiVersion: '2024-08-01-preview', deployment }), deployment };
+};
 
 const fmt = (n) => `₹${Math.abs(n || 0).toLocaleString('en-IN')}`;
 
@@ -50,8 +56,8 @@ const ruleBased = (ctx) => {
 
 const generate = async (calculatedPayroll, employee, previousPayroll) => {
   const ctx = buildContext(calculatedPayroll, employee, previousPayroll);
-
-  if (!OpenAI) return ruleBased(ctx);
+  const azure = getClient();
+  if (!azure) return ruleBased(ctx);
 
   try {
     const prompt = `You are a payroll assistant. Write a clear, friendly 3-4 sentence salary explanation for an employee.
@@ -64,8 +70,8 @@ ${ctx.previousNetSalary ? `Previous month net: ${fmt(ctx.previousNetSalary)} (ch
 
 Write a concise explanation covering the key components and any notable changes. Use Indian Rupee (₹) symbol. Be factual and professional.`;
 
-    const response = await OpenAI.chat.completions.create({
-      model: 'gpt-4o-mini',
+    const response = await azure.client.chat.completions.create({
+      model: azure.deployment,
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 200,
       temperature: 0.4,
@@ -73,7 +79,7 @@ Write a concise explanation covering the key components and any notable changes.
 
     return response.choices[0].message.content.trim();
   } catch (err) {
-    console.warn('OpenAI explanation failed, using rule-based fallback:', err.message);
+    console.warn('Azure OpenAI explanation failed, using rule-based fallback:', err.message);
     return ruleBased(ctx);
   }
 };

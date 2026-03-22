@@ -13,7 +13,7 @@ const MyPayslipsPage = () => {
   const { employeeId } = authStore();
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchPayslips = async () => {
       try {
         const res = await getMyPayslips(employeeId);
         setPayslips(res.data);
@@ -23,7 +23,11 @@ const MyPayslipsPage = () => {
         setLoading(false);
       }
     };
-    if (employeeId) fetch();
+    if (employeeId) {
+      fetchPayslips();
+      const interval = setInterval(fetchPayslips, 5000);
+      return () => clearInterval(interval);
+    }
   }, [employeeId]);
 
   const handleDownload = async (ps) => {

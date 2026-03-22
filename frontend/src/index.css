@@ -106,13 +106,20 @@ body::after {
   position: relative;
   z-index: 1;
   min-width: 0;
+  max-width: 100%;
 }
 
 @media (max-width: 767px) {
   .main-content {
     margin-left: 0 !important;
     padding: 1rem;
-    padding-top: 4rem; /* space for hamburger */
+    padding-top: 4.5rem;
+  }
+  .page-title {
+    font-size: 1.4rem;
+  }
+  .card {
+    padding: 1rem;
   }
 }
 

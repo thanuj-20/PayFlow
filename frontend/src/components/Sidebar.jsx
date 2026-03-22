@@ -2,14 +2,17 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, CalendarCheck, CreditCard,
-  FileText, BarChart2, User, LogOut, Lock, Shield, X,
+  FileText, BarChart2, User, LogOut, Lock, X,
 } from 'lucide-react';
 import { authStore } from '../store/authStore';
+import { useSidebar } from '../store/sidebarStore';
 
-const Sidebar = ({ open, onClose }) => {
+const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { role, clearAuth } = authStore();
+  const { open, setOpen } = useSidebar();
+  const onClose = () => setOpen(false);
 
   const hrNavItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -19,7 +22,6 @@ const Sidebar = ({ open, onClose }) => {
     { icon: CreditCard, label: 'Payroll', path: '/payroll' },
     { icon: FileText, label: 'Payslips', path: '/payslips' },
     { icon: BarChart2, label: 'Reports', path: '/reports' },
-    { icon: Shield, label: 'Audit Log', path: '/audit-log' },
     { icon: Lock, label: 'Change Password', path: '/change-password' },
   ];
 

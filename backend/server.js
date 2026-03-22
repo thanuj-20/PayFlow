@@ -20,6 +20,7 @@ const payslipsRoutes = require('./routes/payslips');
 const reportsRoutes = require('./routes/reports');
 const leavesRoutes = require('./routes/leaves');
 const notificationsRoutes = require('./routes/notifications');
+const chatRoutes = require('./routes/chat');
 
 const app = express();
 
@@ -76,6 +77,7 @@ async function startServer() {
   app.use('/api/reports', reportsRoutes);
   app.use('/api/leaves', leavesRoutes);
   app.use('/api/notifications', notificationsRoutes);
+  app.use('/api/chat', chatRoutes);
 
   app.use((err, req, res, next) => {
     res.status(500).json({ error: err.message });

@@ -35,7 +35,11 @@ const MyAttendancePage = () => {
   }, [employeeId]);
 
   useEffect(() => {
-    if (employeeId) fetchRecords();
+    if (employeeId) {
+      fetchRecords();
+      const interval = setInterval(fetchRecords, 5000);
+      return () => clearInterval(interval);
+    }
   }, [employeeId, fetchRecords]);
 
   const handleCheckIn = async () => {

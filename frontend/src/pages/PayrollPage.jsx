@@ -150,7 +150,11 @@ const PayrollPage = () => {
     }
   };
 
-  useEffect(() => { fetchData(); }, [selectedMonth, selectedYear]);
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, [selectedMonth, selectedYear]);
 
   const handleInitiate = async () => {
     setInitiating(true);

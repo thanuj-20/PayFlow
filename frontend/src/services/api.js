@@ -103,3 +103,6 @@ export const downloadPayslip = (id) => api.get(`/api/payslips/download/${id}`, {
 
 // Leave balance
 export const getLeaveBalance = () => api.get('/api/leaves/balance');
+
+// Chatbot
+export const sendChatMessage = (messages) => api.post('/api/chat', { messages });

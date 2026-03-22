@@ -27,7 +27,11 @@ const LeavePage = () => {
     }
   };
 
-  useEffect(() => { fetchLeaves(); }, [filter]);
+  useEffect(() => {
+    fetchLeaves();
+    const interval = setInterval(fetchLeaves, 5000);
+    return () => clearInterval(interval);
+  }, [filter]);
 
   const handleUpdate = async (id, status) => {
     const hrComment = status === 'rejected' ? window.prompt('Reason for rejection:') : '';
@@ -124,7 +128,7 @@ const LeavePage = () => {
                     <tr key={leave.id}>
                       <td className="font-medium">{leave.employeeName}</td>
                       <td>{leave.department}</td>
-                      <td className="capitalize">{leave.leaveType}</td>
+                      <td className="capitalize">{leave.leaveType === 'unpaid' ? 'Paid' : leave.leaveType}</td>
                       <td className="font-mono">{leave.startDate}</td>
                       <td className="font-mono">{leave.endDate}</td>
                       <td className="font-mono">{leave.days}</td>

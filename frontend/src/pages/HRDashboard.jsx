@@ -121,7 +121,6 @@ const HRDashboard = () => {
         if (attendanceRes.status === 'fulfilled') setAttendanceSummary(attendanceRes.value.data);
         if (reportsRes.status === 'fulfilled') setReportData(reportsRes.value.data);
         if (payrollRes.status === 'fulfilled') {
-          // Group approved payroll by month/year and sum net salary
           const approved = payrollRes.value.data.filter(p => p.status === 'approved');
           const grouped = {};
           approved.forEach(p => {
@@ -138,6 +137,8 @@ const HRDashboard = () => {
       }
     };
     fetchData();
+    const interval = setInterval(fetchData, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const totalEmployees = employees.length;
@@ -179,7 +180,7 @@ const HRDashboard = () => {
           </div>
 
           {/* Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 mb-10">
             <StatCard icon={Users} label="Total Employees" value={totalEmployees} color="primary" />
             <StatCard icon={UserCheck} label="Active Employees" value={activeEmployees} color="secondary" />
             <StatCard icon={IndianRupee} label="Monthly Payroll" value={`₹${totalPayroll.toLocaleString('en-IN')}`} color="secondary" />

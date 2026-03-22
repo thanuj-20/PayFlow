@@ -6,6 +6,7 @@ import { Sun, Moon, Menu } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { authStore } from './store/authStore';
 import { themeStore } from './store/themeStore';
+import { SidebarProvider, useSidebar } from './store/sidebarStore';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import HRDashboard from './pages/HRDashboard';
@@ -24,6 +25,7 @@ import ChangePasswordPage from './pages/ChangePasswordPage';
 import AuditLogPage from './pages/AuditLogPage';
 import NotificationBell from './components/NotificationBell';
 import QuickSearch from './components/QuickSearch';
+import ChatBot from './components/ChatBot';
 
 const ProtectedRoute = ({ children, hrOnly = false }) => {
   const { isAuthenticated, role } = authStore();
@@ -32,11 +34,11 @@ const ProtectedRoute = ({ children, hrOnly = false }) => {
   return children;
 };
 
-const App = () => {
+const AppInner = () => {
   const { isAuthenticated, role, token, clearAuth } = authStore();
   const { isDark, toggleTheme } = themeStore();
+  const { open: sidebarOpen, setOpen: setSidebarOpen } = useSidebar();
   const [warnedExpiry, setWarnedExpiry] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.className = isDark ? 'dark' : 'light';
@@ -77,11 +79,11 @@ const App = () => {
         </button>
       )}
 
-      {/* Theme toggle — only show when not on login/landing */}
+      {/* Theme toggle */}
       {isAuthenticated && (
         <button
           onClick={toggleTheme}
-          className="fixed top-4 right-16 z-50 p-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          className="fixed top-4 right-14 z-50 p-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           title="Toggle theme"
         >
           {isDark ? <Sun size={18} /> : <Moon size={18} />}
@@ -97,6 +99,9 @@ const App = () => {
 
       {/* Ctrl+K quick search */}
       {isAuthenticated && <QuickSearch />}
+
+      {/* AI Chatbot */}
+      {isAuthenticated && <ChatBot />}
 
       <AnimatePresence mode="wait">
         <Routes>
@@ -132,5 +137,11 @@ const App = () => {
     </Router>
   );
 };
+
+const App = () => (
+  <SidebarProvider>
+    <AppInner />
+  </SidebarProvider>
+);
 
 export default App;
