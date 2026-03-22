@@ -1,3 +1,15 @@
 node_modules/
-.env
 *.log
+npm-debug.log*
+
+# Environment — never commit these
+.env
+.env.local
+.env.production
+.env.staging
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
